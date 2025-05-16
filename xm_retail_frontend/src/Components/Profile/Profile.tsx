@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 import Logo from "../NavBar/assets/Group_1.png";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 // Define the Card interface
 interface Card {
@@ -365,12 +367,189 @@ export default function Profile() {
             </div>
 
             {/* Footer */}
-            <div className="mt-6 text-center">
+            <div className="mt-6 flex flex-row justify-center gap-3">
               <button
-                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors"
+                onClick={async () => {
+                  const websiteUrl = window.location.origin;
+                  const shareText =
+                    `Gift Card Details:\n` +
+                    `Product: ${selectedCard.productName}\n` +
+                    `Amount: ₹${selectedCard.amount}\n` +
+                    `Card Number: ${selectedCard.cardNumber}\n` +
+                    `PIN: ${selectedCard.cardPin}\n` +
+                    `Valid Till: ${new Date(selectedCard.validity).toLocaleDateString()}\n\n` +
+                    `Visit us: ${websiteUrl}`;
+                  const shareData = {
+                    title: `Gift Card: ${selectedCard.productName}`,
+                    text: shareText,
+                  };
+                  if (navigator.share) {
+                    try {
+                      await navigator.share(shareData);
+                    } catch {
+                      alert("Sharing cancelled or failed.");
+                    }
+                  } else {
+                    // Fallback: copy to clipboard
+                    try {
+                      await navigator.clipboard.writeText(shareText);
+                      alert("Card details copied to clipboard!");
+                    } catch {
+                      alert("Failed to copy card details.");
+                    }
+                  }
+                }}
+              >
+                Share Card
+              </button>
+              <button
+                className="bg-orange-500 text-white px-3 py-1 rounded-md text-sm hover:bg-orange-600 transition-colors"
                 onClick={closeModal}
               >
                 Close
+              </button>
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded-md text-sm hover:bg-green-600 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 duration-200"
+                onClick={async () => {
+                  const doc = new jsPDF();
+
+                  // Add your logo (centered)
+                  const logoImg = new Image();
+                  logoImg.src = Logo;
+                  await new Promise((resolve) => {
+                    logoImg.onload = resolve;
+                  });
+
+                  // Center logo and 'XM RETAIL' text side by side, with smaller logo
+                  const logoWidth = 18;
+                  const logoHeight = 9;
+                  const logoY = 14;
+                  const text = "XM RETAIL";
+                  doc.setFontSize(14);
+                  const textWidth = doc.getTextWidth(text);
+                  const totalWidth = logoWidth + 8 + textWidth;
+                  const pageWidth = doc.internal.pageSize.getWidth();
+                  const startX = (pageWidth - totalWidth) / 2;
+                  doc.addImage(logoImg, "PNG", startX, logoY, logoWidth, logoHeight);
+                  doc.text(text, startX + logoWidth + 8, logoY + 7);
+
+                  // Title with more spacing
+                  doc.setFontSize(18);
+                  doc.setFont("helvetica", "bold");
+                  doc.text("Bill of Supply", pageWidth / 2, logoY + logoHeight + 14, { align: "center" });
+                  doc.setFont("helvetica", "normal");
+
+                  // Draw a line below header
+                  doc.setDrawColor(200, 200, 200);
+                  doc.line(20, logoY + logoHeight + 18, pageWidth - 20, logoY + logoHeight + 18);
+
+                  // Company Details (left) and Invoice Info (right)
+                  doc.setFontSize(10);
+                  let detailsY = logoY + logoHeight + 28;
+                  
+                  // Company Details (left side)
+                  doc.text("Xstream Minds Pvt Ltd", 20, detailsY);
+                  doc.text("402, Sri Geetanjali Towers, Beside Nexus Mall,", 20, detailsY + 5);
+                  doc.text("Kukatpally Housing Board Colony,", 20, detailsY + 10);
+                  doc.text("Hyderabad, Telangana, India 500072.", 20, detailsY + 15);
+
+                  // Invoice Info (right side) - Adjusted position
+                  const infoX = pageWidth - 80; // Increased distance from right edge
+                  doc.text("Invoice Number: " + (selectedCard.orderId || ''), infoX, detailsY);
+                  doc.text("Invoice Date: " + (selectedCard.issuanceDate ? new Date(selectedCard.issuanceDate).toLocaleDateString() : ''), infoX, detailsY + 5);
+                  doc.text("Payment Method: UPI", infoX, detailsY + 10);
+
+                  // Bill To - Increased spacing from previous section
+                  let billToY = detailsY + 30; // Increased spacing
+                  doc.setFontSize(12);
+                  doc.setFont("helvetica", "bold");
+                  doc.text("Bill To:", 20, billToY);
+                  doc.setFont("helvetica", "normal");
+                  doc.setFontSize(10);
+                  doc.text(user.name || '', 20, billToY + 5);
+                  doc.text(user.phone || '', 20, billToY + 10);
+                  doc.text(user.email || '', 20, billToY + 15); // Added email
+
+                  // Product Table Header - Increased spacing
+                  let tableY = billToY + 25; // Increased spacing
+                  
+                  // Table Header Background
+                  doc.setFillColor(255, 153, 0);
+                  doc.rect(20, tableY, pageWidth - 40, 10, "F");
+                  
+                  // Table Header Text
+                  doc.setTextColor(0, 0, 0);
+                  doc.setFont("helvetica", "bold");
+                  doc.text("PRODUCT DESCRIPTION", 22, tableY + 7);
+                  doc.text("QUANTITY", pageWidth / 2, tableY + 7, { align: "center" });
+                  doc.text("UNIT PRICE", pageWidth - 45, tableY + 7, { align: "right" });
+                  doc.setFont("helvetica", "normal");
+
+                  // Product Table Row - Enhanced styling
+                  let rowY = tableY + 13;
+                  
+                  // Add subtle background to row
+                  doc.setFillColor(245, 245, 245);
+                  doc.rect(20, rowY - 3, pageWidth - 40, 12, "F");
+                  
+                  // Add border to row
+                  doc.setDrawColor(200, 200, 200);
+                  doc.rect(20, rowY - 3, pageWidth - 40, 12);
+                  
+                  // Product details with better spacing
+                  doc.setTextColor(80, 80, 80);
+                  doc.setFontSize(10);
+                  
+                  // Product Name with ellipsis if too long
+                  const productName = selectedCard.productName || '';
+                  const maxWidth = pageWidth / 2 - 45;
+                  let displayName = productName;
+                  if (doc.getTextWidth(productName) > maxWidth) {
+                    while (doc.getTextWidth(displayName + '...') > maxWidth) {
+                      displayName = displayName.slice(0, -1);
+                    }
+                    displayName += '...';
+                  }
+                  doc.text(displayName, 22, rowY + 3);
+                  
+                  // Quantity with centered alignment
+                  doc.text("1", pageWidth / 2, rowY + 3, { align: "center" });
+                  
+                  // Price with right alignment and currency symbol
+                  const price = "₹" + (selectedCard.amount || 0);
+                  doc.text(price, pageWidth - 45, rowY + 3, { align: "right" });
+                  
+                  // Reset text color for next section
+                  doc.setTextColor(0, 0, 0);
+                  doc.setFontSize(12);
+
+                  // Amounts Section - Increased spacing
+                  let amountsY = rowY + 20; // Adjusted spacing after table row
+                  doc.text("Amount (INR):", pageWidth - 80, amountsY);
+                  doc.text("₹" + (selectedCard.amount || 0), pageWidth - 30, amountsY, { align: "right" });
+                  doc.setFontSize(14);
+                  doc.setFont("helvetica", "bold");
+                  doc.text("Net Amount Paid (INR):", pageWidth - 80, amountsY + 14);
+                  doc.text("₹" + (selectedCard.amount || 0), pageWidth - 30, amountsY + 14, { align: "right" });
+                  doc.setFont("helvetica", "normal");
+
+                  // Draw a line above footer - Adjusted position
+                  doc.setDrawColor(200, 200, 200);
+                  doc.line(20, 270, pageWidth - 20, 270);
+
+                  // Footer - Adjusted position
+                  doc.setFontSize(10);
+                  doc.text("Thank you for your business!", pageWidth / 2, 280, { align: "center" });
+
+                  // Save PDF
+                  doc.save(`GiftCard_Invoice_${selectedCard.orderId}.pdf`);
+                }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Download Invoice
               </button>
             </div>
           </div>
