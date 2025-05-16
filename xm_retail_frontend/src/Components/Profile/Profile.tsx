@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { FaUserCircle } from "react-icons/fa";
+import { FaUserCircle, FaTimes } from "react-icons/fa";
 import { IoCall } from "react-icons/io5";
 import { MdEmail } from "react-icons/md";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
+import Logo from "../NavBar/assets/Group_1.png";
 
 // Define the Card interface
 interface Card {
@@ -24,8 +25,10 @@ export default function Profile() {
   const [user, setUser] = useState({ name: "", email: "", phone: "" });
   const [isEditing, setIsEditing] = useState(false);
   const [cards, setCards] = useState<Card[]>([]);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const apiUrl = import.meta.env.VITE_APP_SERVER_BASE_URL;
 
+  // Fetch user profile
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -48,6 +51,7 @@ export default function Profile() {
     }
   }, [navigate, storedUser.email]);
 
+  // Fetch gift cards
   useEffect(() => {
     const fetchGiftCards = async () => {
       const token = localStorage.getItem("token");
@@ -65,12 +69,19 @@ export default function Profile() {
           },
         });
         setCards(response.data);
+        localStorage.setItem("cards", JSON.stringify(response.data)); // Persist cards in localStorage
       } catch (error) {
         console.error("Error fetching gift cards:", error);
       }
     };
 
-    fetchGiftCards();
+    // Load cards from localStorage if available
+    const storedCards = localStorage.getItem("cards");
+    if (storedCards) {
+      setCards(JSON.parse(storedCards));
+    } else {
+      fetchGiftCards();
+    }
   }, [navigate, apiUrl]);
 
   const handleEdit = () => setIsEditing(true);
@@ -88,11 +99,21 @@ export default function Profile() {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("cards"); // Clear cards from localStorage on logout
+    setCards([]); // Clear cards from state
     window.dispatchEvent(new Event("storage"));
     window.location.href = "/";
   };
 
-  // 💡 Calculate totals
+  const handleCardClick = (card: Card) => {
+    setSelectedCard(card);
+  };
+
+  const closeModal = () => {
+    setSelectedCard(null);
+  };
+
+  // Calculate totals
   const totalSavings = cards.reduce((total, card) => {
     const originalPrice = card.amount / 0.95; // assuming 5% discount
     return total + (originalPrice - card.amount);
@@ -183,7 +204,7 @@ export default function Profile() {
         )}
       </div>
 
-      {/* ✅ Updated Financial Summary Section */}
+      {/* Financial Summary */}
       <div className="mt-6 bg-purple-600 text-white p-6 rounded-2xl shadow-lg max-w-4xl mx-auto flex justify-between items-center">
         <div>
           <p className="text-sm">Total Savings</p>
@@ -199,92 +220,162 @@ export default function Profile() {
       </div>
 
       {/* My Gift Cards Section */}
-      {/* My Gift Cards Section */}
-<div className="mt-6 max-w-4xl mx-auto bg-[#E5E5E5] p-6 rounded-2xl shadow-inner">
-  <h3 className="text-xl font-semibold mb-4">My Gift Cards</h3>
+      <div className="mt-6 max-w-4xl mx-auto bg-[#E5E5E5] p-6 rounded-2xl shadow-inner">
+        <h3 className="text-xl font-semibold mb-4">My Gift Cards</h3>
 
-  {cards.length === 0 ? (
-    <p className="text-center bg-gray-200 p-6 rounded-2xl">No gift cards found.</p>
-  ) : (
-    <Carousel
-      additionalTransfrom={0}
-      arrows
-      autoPlaySpeed={3000}
-      centerMode={false}
-      className=""
-      containerClass="container-with-dots"
-      dotListClass=""
-      draggable
-      focusOnSelect={false}
-      infinite={false}
-      itemClass="px-2"
-      keyBoardControl
-      minimumTouchDrag={80}
-      renderButtonGroupOutside={false}
-      renderDotsOutside={false}
-      responsive={{
-        superLargeDesktop: {
-          breakpoint: { max: 4000, min: 1536 },
-          items: 4,
-        },
-        desktop: {
-          breakpoint: { max: 1536, min: 1024 },
-          items: 3,
-        },
-        tablet: {
-          breakpoint: { max: 1024, min: 768 },
-          items: 2,
-        },
-        mobile: {
-          breakpoint: { max: 768, min: 0 },
-          items: 1,
-        },
-      }}
-      showDots={false}
-      sliderClass=""
-      slidesToSlide={1}
-      swipeable
-    >
-      {cards.map((card) => (
-  <div
-    key={card.orderId}
-    className="bg-white rounded-2xl shadow-md p-4 w-full h-full flex flex-col justify-between border border-gray-200 hover:shadow-lg transition duration-300"
-  >
-    <div>
-      <h4 className="text-lg font-semibold text-gray-800 mb-2 truncate">{card.productName}</h4>
-      <p className="text-sm text-gray-600 mb-1">
-        <span className="font-medium">Amount:</span> ₹{card.amount}
-      </p>
-      <p className="text-sm text-gray-600 mb-1">
-        <span className="font-medium">Card #:</span>{" "}
-        <span className="font-mono text-blue-700">{card.cardNumber}</span>
-      </p>
-      <p className="text-sm text-gray-600 mb-1">
-        <span className="font-medium">PIN:</span>{" "}
-        <span className="font-mono text-red-600">{card.cardPin}</span>
-      </p>
-    </div>
-    <div className="mt-3 border-t pt-2 text-xs text-gray-500">
-      <p>
-        Issued: {new Date(card.issuanceDate).toLocaleDateString()}
-      </p>
-      <p>
-        Valid till:{" "}
-        {new Date(card.validity).toLocaleString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })}
-      </p>
-    </div>
-  </div>
-))}
-    </Carousel>
-  )}
-</div>  
+        {cards.length === 0 ? (
+          <p className="text-center bg-gray-200 p-6 rounded-2xl">
+            No gift cards found.
+          </p>
+        ) : (
+          <Carousel
+            additionalTransfrom={0}
+            arrows
+            autoPlaySpeed={3000}
+            centerMode={false}
+            className=""
+            containerClass="container-with-dots"
+            dotListClass=""
+            draggable
+            focusOnSelect={false}
+            infinite={false}
+            itemClass="px-2"
+            keyBoardControl
+            minimumTouchDrag={80}
+            renderButtonGroupOutside={false}
+            renderDotsOutside={false}
+            responsive={{
+              superLargeDesktop: {
+                breakpoint: { max: 4000, min: 1536 },
+                items: 4,
+              },
+              desktop: {
+                breakpoint: { max: 1536, min: 1024 },
+                items: 3,
+              },
+              tablet: {
+                breakpoint: { max: 1024, min: 768 },
+                items: 2,
+              },
+              mobile: {
+                breakpoint: { max: 768, min: 0 },
+                items: 1,
+              },
+            }}
+            showDots={false}
+            sliderClass=""
+            slidesToSlide={1}
+            swipeable
+          >
+            {cards.map((card) => (
+              <div
+                key={card.orderId}
+                className="bg-white rounded-2xl shadow-md p-4 w-full h-full flex flex-col justify-between hover:shadow-lg transition duration-300 cursor-pointer group relative"
+                onClick={() => handleCardClick(card)} // Open modal with card details
+              >
+                <div className="relative">
+                  {/* Card Content */}
+                  <h4 className="text-lg font-semibold text-gray-800 mb-2 truncate relative z-10">
+                    {card.productName}
+                  </h4>
+                  <p className="text-sm text-gray-600 relative z-10">
+                    <span className="font-medium">Issued:</span>{" "}
+                    {new Date(card.issuanceDate).toLocaleDateString()}
+                  </p>
+                </div>
+
+                {/* Logo and Name in Bottom-Right Corner */}
+                <div className="absolute bottom-2 right-2 flex items-center gap-1 z-10">
+                  <img
+                    src={Logo} // Replace with the actual path to your logo file
+                    alt="Gift Card Logo"
+                    className="h-4 w-auto filter grayscale" // Apply grayscale filter to match text color
+                  />
+                  <span className="text-[10px] font-medium text-gray-400">
+                    XM RETAIL
+                  </span>
+                </div>
+              </div>
+            ))}
+          </Carousel>
+        )}
+      </div>
+
+      {/* Modal for Card Details */}
+      {selectedCard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div
+            className="bg-white rounded-2xl shadow-2xl p-6 w-11/12 sm:w-2/3 lg:w-1/3 relative"
+            style={{
+              backgroundImage: `repeating-linear-gradient(
+                135deg,
+                rgba(128, 128, 128, 0.1),
+                rgba(128, 128, 128, 0.1) 10px,
+                transparent 10px,
+                transparent 20px
+              )`,
+              backgroundSize: "20px 20px",
+            }}
+          >
+            {/* Close Button */}
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+              onClick={closeModal}
+            >
+              <FaTimes size={20} />
+            </button>
+
+            {/* Card Header */}
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">
+                {selectedCard.productName}
+              </h3>
+              <p className="text-sm text-gray-500">
+                Issued on:{" "}
+                {new Date(selectedCard.issuanceDate).toLocaleDateString()}
+              </p>
+            </div>
+
+            {/* Card Details */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Amount:</span>
+                <span className="text-lg font-semibold text-green-600">
+                  ₹{selectedCard.amount}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Card Number:</span>
+                <span className="font-mono text-blue-700">
+                  {selectedCard.cardNumber}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">PIN:</span>
+                <span className="font-mono text-red-600">
+                  {selectedCard.cardPin}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Valid Till:</span>
+                <span className="text-gray-800">
+                  {new Date(selectedCard.validity).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 text-center">
+              <button
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                onClick={closeModal}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer Section */}
       <div className="mt-6 max-w-4xl mx-auto text-gray-600 text-sm flex justify-between items-center">

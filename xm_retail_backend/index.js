@@ -15,7 +15,6 @@ import payment from "./routes/payment.js"
 import woohooRoutes from "./routes/woohooRoutes.js";
 import orderRoutes from "./routes/orderroutes.js"; // Ensure the file extension is included
 import Order from "./models/orderModel.js";
-import searchRoutes from "./routes/search.js";
 import OrderdetailsRoutes from "./routes/OrderdetailsRoutes.js"; // Ensure the file extension is included
 import searchRoutes from "./routes/search.js"; // Ensure the file extension is included
 
@@ -90,7 +89,6 @@ app.use("/cust/data",cust);
 app.use("/api/order",OrderdetailsRoutes);
 app.use("/api/search", searchRoutes);
 
-app.use("/api/search", searchRoutes);
 
 
 app.listen(PORT, () => {

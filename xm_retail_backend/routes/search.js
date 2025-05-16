@@ -14,11 +14,7 @@ router.get("/", async (req, res) => {
   }
 
   try {
-<<<<<<< HEAD
-    // Search in `Card` model
-=======
     // Search in Card model
->>>>>>> 0d70c2e5abfa15c88e8ce628cc9b14bb0ed6a166
     const cardResults = await Card.findAll({
       where: {
         name: {
@@ -28,11 +24,7 @@ router.get("/", async (req, res) => {
       attributes: ["id", "name", "image", "cashback"],
     });
 
-<<<<<<< HEAD
-    // Search in `Product` model
-=======
     // Search in Product model
->>>>>>> 0d70c2e5abfa15c88e8ce628cc9b14bb0ed6a166
     const productResults = await Product.findAll({
       where: {
         name: {
@@ -42,11 +34,7 @@ router.get("/", async (req, res) => {
       attributes: ["id", "name", "image", "sku"],
     });
 
-<<<<<<< HEAD
-    // Search in `WoohooCategory` model
-=======
     // Search in WoohooCategory model
->>>>>>> 0d70c2e5abfa15c88e8ce628cc9b14bb0ed6a166
     const categoryResults = await WoohooCategory.findAll({
       where: {
         name: {
@@ -86,8 +74,4 @@ router.get("/", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
 export default router;
-=======
-export default router;
->>>>>>> 0d70c2e5abfa15c88e8ce628cc9b14bb0ed6a166
