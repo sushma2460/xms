@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Nav from "../NavBar/Nav";
 
@@ -24,6 +24,7 @@ interface Product {
 
 const ProductList: React.FC = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
+  const navigate = useNavigate();
   const [productList, setProductList] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -59,8 +60,21 @@ const ProductList: React.FC = () => {
 
   return (
     <>
-      <Nav/>
+      <Nav/> 
       <div className="p-6 max-w-7xl mx-auto">
+          
+          <div className="text-gray-500 text-sm mb-4">
+        <span
+          className="text-orange-500 cursor-pointer"
+          onClick={() => navigate("/home")}
+        >
+          Home
+        </span>{" "}
+        / <span className="font-semibold">Products</span>
+      </div>
+
+
+
         <h1 className="text-2xl font-bold mb-6 text-center">Products for Category {categoryId}</h1>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
           {productList.length > 0 ? (

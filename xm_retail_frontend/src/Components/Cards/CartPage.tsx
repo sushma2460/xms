@@ -202,13 +202,18 @@ const CartPage: React.FC = () => {
     <>
       <Nav />
       <div className="p-6 max-w-4xl mx-auto m-12">
-        <div className="flex items-center justify-between mb-6">
-          <Link to="/products/121" className="text-blue-600 hover:underline text-sm">
-            ← Back to Products
-          </Link>
-          
-          
-        </div>
+      <div className="text-gray-500 text-sm mb-4">
+        <span
+          className="text-orange-500 cursor-pointer"
+          onClick={() => navigate("/products/121")}
+        >
+          Products
+        </span>{" "}
+        / <span className="font-semibold">Cart</span>
+      </div>
+
+
+        
         <h1 className="text-3xl font-bold">Your Cart</h1>
 
         {cart.length === 0 ? (

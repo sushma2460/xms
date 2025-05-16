@@ -1,9 +1,11 @@
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Carousel from "react-multi-carousel";
+import "react-multi-carousel/lib/styles.css";
 
 function Carousels() {
-  const [index, setIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerSlide, setItemsPerSlide] = useState(3); // Default for Desktop
   const [images, setImages] = useState<string[]>([]);
   const apiUrl = import.meta.env.VITE_APP_SERVER_BASE_URL;
@@ -52,20 +54,31 @@ function Carousels() {
 
   // Navigate to the next slide
   const nextSlide = () => {
-    if (index + itemsPerSlide < images.length) {
-      setIndex(index + itemsPerSlide);
-    } else {
-      setIndex(0); // Loop back to the first slide
-    }
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
   };
 
   // Navigate to the previous slide
   const prevSlide = () => {
-    if (index - itemsPerSlide >= 0) {
-      setIndex(index - itemsPerSlide);
-    } else {
-      setIndex(images.length - itemsPerSlide); // Loop to the last slide
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
+  };
+
+  // Auto-play effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      nextSlide();
+    }, 3000); // 3 seconds
+
+    return () => clearInterval(interval);
+  }, [images.length]);
+
+  // Calculate visible images
+  const getVisibleImages = () => {
+    const visibleImages = [];
+    for (let i = 0; i < itemsPerSlide; i++) {
+      const imageIndex = (currentIndex + i) % images.length;
+      visibleImages.push(images[imageIndex]);
     }
+    return visibleImages;
   };
 
   return (
@@ -81,12 +94,9 @@ function Carousels() {
       </div>
 
       {/* Carousel Container */}
-      <div
-        className="flex transition-transform duration-700 ease-in-out"
-        style={{ transform: `translateX(-${(index / itemsPerSlide) * 100}%)` }}
-      >
+      <div className="flex transition-transform duration-700 ease-in-out">
         {images.length > 0 ? (
-          images.map((img, idx) => (
+          getVisibleImages().map((img, idx) => (
             <div
               key={idx}
               className={`flex-shrink-0 w-full ${

@@ -283,6 +283,18 @@ const ProductDetails: React.FC = () => {
     <>
       <Nav />
      <div className="max-w-7xl mx-auto px-4 py-10">
+        
+        <div className="text-gray-500 text-sm mb-4">
+        <span
+          className="text-orange-500 cursor-pointer"
+          onClick={() => navigate("/products/121")}
+        >
+          Products
+        </span>{" "}
+        / <span className="font-semibold">ProductDetails</span>
+      </div>
+
+
   {loading && (
     <p className="text-center text-gray-500 text-lg">Loading product details...</p>
   )}

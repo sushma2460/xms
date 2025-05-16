@@ -24,10 +24,18 @@ interface Card {
 export default function Profile() {
   const navigate = useNavigate();
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+  // Immediately redirect if no user is found
+  if (!storedUser.email) {
+    navigate("/");
+    return null;
+  }
+
   const [user, setUser] = useState({ name: "", email: "", phone: "" });
   const [isEditing, setIsEditing] = useState(false);
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [orderCount, setOrderCount] = useState(0);
   const apiUrl = import.meta.env.VITE_APP_SERVER_BASE_URL;
 
   // Fetch user profile
@@ -57,13 +65,11 @@ export default function Profile() {
   useEffect(() => {
     const fetchGiftCards = async () => {
       const token = localStorage.getItem("token");
-
       if (!token) {
         alert("You are not logged in. Redirecting to login...");
         navigate("/");
         return;
       }
-
       try {
         const response = await axios.get(`${apiUrl}/api/orders/user-orders`, {
           headers: {
@@ -71,20 +77,35 @@ export default function Profile() {
           },
         });
         setCards(response.data);
-        localStorage.setItem("cards", JSON.stringify(response.data)); // Persist cards in localStorage
       } catch (error) {
         console.error("Error fetching gift cards:", error);
       }
     };
 
-    // Load cards from localStorage if available
-    const storedCards = localStorage.getItem("cards");
-    if (storedCards) {
-      setCards(JSON.parse(storedCards));
-    } else {
-      fetchGiftCards();
-    }
+    fetchGiftCards();
   }, [navigate, apiUrl]);
+
+  // Fetch order count
+  useEffect(() => {
+    const fetchOrderCount = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const response = await axios.get(
+          `${apiUrl}/api/orders/user-order-count?email=${storedUser.email}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setOrderCount(response.data.count);
+      } catch (error) {
+        setOrderCount(0);
+      }
+    };
+    if (storedUser.email) fetchOrderCount();
+  }, [apiUrl, storedUser.email, navigate]);
 
   const handleEdit = () => setIsEditing(true);
 
@@ -101,10 +122,10 @@ export default function Profile() {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("cards"); // Clear cards from localStorage on logout
-    setCards([]); // Clear cards from state
+    localStorage.removeItem("cards");
+    setCards([]);
     window.dispatchEvent(new Event("storage"));
-    window.location.href = "/";
+    navigate("/"); // Use React Router navigation for immediate redirect
   };
 
   const handleCardClick = (card: Card) => {
@@ -120,6 +141,9 @@ export default function Profile() {
     const originalPrice = card.amount / 0.95; // assuming 5% discount
     return total + (originalPrice - card.amount);
   }, 0);
+
+  // Total number of gift cards
+  const totalGiftCards = cards.length;
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
@@ -428,11 +452,11 @@ export default function Profile() {
                   const text = "XM RETAIL";
                   doc.setFontSize(14);
                   const textWidth = doc.getTextWidth(text);
-                  const totalWidth = logoWidth + 8 + textWidth;
+                  const totalWidth = logoWidth + 3 + textWidth;
                   const pageWidth = doc.internal.pageSize.getWidth();
                   const startX = (pageWidth - totalWidth) / 2;
                   doc.addImage(logoImg, "PNG", startX, logoY, logoWidth, logoHeight);
-                  doc.text(text, startX + logoWidth + 8, logoY + 7);
+                  doc.text(text, startX + logoWidth + 3, logoY + 7);
 
                   // Title with more spacing
                   doc.setFontSize(18);
@@ -517,7 +541,7 @@ export default function Profile() {
                   doc.text("1", pageWidth / 2, rowY + 3, { align: "center" });
                   
                   // Price with right alignment and currency symbol
-                  const price = "₹" + (selectedCard.amount || 0);
+                  const price = Number(selectedCard.amount || 0).toLocaleString("en-IN");
                   doc.text(price, pageWidth - 45, rowY + 3, { align: "right" });
                   
                   // Reset text color for next section
@@ -526,22 +550,37 @@ export default function Profile() {
 
                   // Amounts Section - Increased spacing
                   let amountsY = rowY + 20; // Adjusted spacing after table row
-                  doc.text("Amount (INR):", pageWidth - 80, amountsY);
-                  doc.text("₹" + (selectedCard.amount || 0), pageWidth - 30, amountsY, { align: "right" });
-                  doc.setFontSize(14);
-                  doc.setFont("helvetica", "bold");
-                  doc.text("Net Amount Paid (INR):", pageWidth - 80, amountsY + 14);
-                  doc.text("₹" + (selectedCard.amount || 0), pageWidth - 30, amountsY + 14, { align: "right" });
-                  doc.setFont("helvetica", "normal");
-
-                  // Draw a line above footer - Adjusted position
+                  
+                  // Draw a line above amounts section
                   doc.setDrawColor(200, 200, 200);
-                  doc.line(20, 270, pageWidth - 20, 270);
+                  doc.line(20, amountsY - 5, pageWidth - 20, amountsY - 5);
+                  
+                  // Amount details with proper formatting
+                  doc.setFontSize(11);
+                  doc.text("Amount (INR):", pageWidth / 2, amountsY, { align: "center" });
+                  const amount = Number(selectedCard.amount || 0).toLocaleString("en-IN");
+                  doc.text(amount, pageWidth - 45, amountsY, { align: "right" });
+                  
+                  // Net Amount with bold formatting
+                  doc.setFontSize(12);
+                  doc.setFont("helvetica", "bold");
+                  doc.text("Net Amount Paid (INR):", pageWidth / 2, amountsY + 15, { align: "center" });
+                  const netAmount = Number(selectedCard.amount || 0).toLocaleString("en-IN");
+                  doc.text(netAmount, pageWidth - 45, amountsY + 15, { align: "right" });
+                  doc.setFont("helvetica", "normal");
+                  
+                  // Draw a line below amounts section
+                  doc.setDrawColor(200, 200, 200);
+                  doc.line(20, amountsY + 25, pageWidth - 20, amountsY + 25);
 
-                  // Footer - Adjusted position
+                  // Add more space before footer
+                  const footerY = amountsY + 45; // Increased from 40 to 45
+
+                  // Footer - Adjusted position with more spacing
                   doc.setFontSize(10);
-                  doc.text("Thank you for your business!", pageWidth / 2, 280, { align: "center" });
+                  doc.text("Thank you for your business!", pageWidth / 2, footerY, { align: "center" });
 
+                  
                   // Save PDF
                   doc.save(`GiftCard_Invoice_${selectedCard.orderId}.pdf`);
                 }}
