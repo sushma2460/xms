@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FaUserCircle, FaShoppingCart } from "react-icons/fa";
+import { FaUserCircle } from "react-icons/fa";
+import { ShoppingCart } from "lucide-react";
 import axios from "axios";
 import Logo from "./assets/Group_1.png";
 
@@ -13,12 +14,13 @@ interface SearchResult {
   sku?: string;
 }
 
-function Nav() {
+const Nav: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("user"));
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [cartCount, setCartCount] = useState(0);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -52,6 +54,21 @@ function Nav() {
     const debounceTimer = setTimeout(fetchData, 300);
     return () => clearTimeout(debounceTimer);
   }, [searchTerm, apiUrl]);
+
+  useEffect(() => {
+    // Listen for cart changes in localStorage
+    const updateCartCount = () => {
+      try {
+        const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+        setCartCount(cart.length);
+      } catch {
+        setCartCount(0);
+      }
+    };
+    updateCartCount();
+    window.addEventListener("storage", updateCartCount);
+    return () => window.removeEventListener("storage", updateCartCount);
+  }, []);
 
   const handleResultClick = (result: SearchResult) => {
     setSearchTerm(result.name);
@@ -173,16 +190,19 @@ function Nav() {
             </Link>
           )} 
              {isLoggedIn && (
-          <Link to="/cart" className="text-2xl text-[#ff6726] cursor-pointer">
-            <FaShoppingCart className="text-2xl mx-2" />
-          </Link>
-        )}
-
-          {/* Profile Icon */}
-          {isLoggedIn && (
-            <Link to="/profile">
-              <FaUserCircle className="text-2xl text-[#ff6726] cursor-pointer" />
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link to="/cart" className="relative">
+                <ShoppingCart size={24} color="#ff6726" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-white text-[#ff6726] text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center border border-[#ff6726] shadow">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+              <Link to="/profile" className="ml-2">
+                <FaUserCircle className="text-2xl text-[#ff6726] cursor-pointer" />
+              </Link>
+            </div>
           )}
         </div>
       </nav>

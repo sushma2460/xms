@@ -56,11 +56,11 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-5xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4 text-center">Carousel Dashboard</h2>
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold mb-3">Manage Images (Max 9)</h3>
-        <div className="grid grid-cols-3 gap-4">
+      <div className="bg-white p-3 sm:p-6 rounded-lg shadow-md">
+        <h3 className="text-base sm:text-lg font-semibold mb-3">Manage Images (Max 9)</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {images.map((img, index) => (
-            <div key={index} className="relative group border border-gray-300 p-2 rounded-lg">
+            <div key={index} className="relative group border border-gray-300 p-1 sm:p-2 rounded-lg">
               <input
                 type="file"
                 accept="image/*"
@@ -73,10 +73,10 @@ export default function AdminDashboard() {
                   <img
                     src={img}
                     alt={`Image ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg group-hover:scale-105 transition-transform"
+                    className="w-full h-24 sm:h-32 object-cover rounded-lg group-hover:scale-105 transition-transform"
                   />
                 ) : (
-                  <div className="w-full h-32 bg-gray-300 flex items-center justify-center rounded-lg text-sm font-semibold">
+                  <div className="w-full h-24 sm:h-32 bg-gray-300 flex items-center justify-center rounded-lg text-xs sm:text-sm font-semibold">
                     Upload Image {index + 1}
                   </div>
                 )}
@@ -84,9 +84,10 @@ export default function AdminDashboard() {
               {img && (
                 <button
                   onClick={() => deleteImage(index)}
-                  className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:opacity-100 opacity-75"
+                  className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-red-600 text-white p-1 sm:p-2 rounded-full hover:opacity-100 opacity-75 z-20"
+                  style={{ boxShadow: "0 2px 6px rgba(0,0,0,0.15)" }}
                 >
-                  <FaTrash />
+                  <FaTrash size={14} className="sm:w-4 sm:h-4" />
                 </button>
               )}
             </div>

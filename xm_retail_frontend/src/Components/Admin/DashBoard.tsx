@@ -52,7 +52,8 @@ export default function DashBoard(): JSX.Element {
 
   return (
     <div className="flex h-screen">
-      <div className="bg-gray-800 text-white w-64 p-5 space-y-4 h-screen fixed top-0 left-0">
+      {/* Sidebar for desktop (always on the left) */}
+      <div className="hidden md:flex flex-col bg-gray-800 text-white w-64 p-5 space-y-4 h-screen fixed top-0 left-0 z-30">
         <h2 className="text-2xl font-bold">Admin Dashboard</h2>
         <ul className="space-y-4">
           <li>
@@ -71,7 +72,6 @@ export default function DashBoard(): JSX.Element {
               <FiTag /> <span>Cards</span>
             </button>
           </li>
-         
           <li>
             <button
               onClick={() => setActiveSection("orders")}
@@ -99,21 +99,82 @@ export default function DashBoard(): JSX.Element {
         </ul>
       </div>
 
-      <div className="flex-1 bg-gray-100 p-5 ml-64 overflow-y-auto h-screen">
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="text-2xl md:hidden fixed top-5 left-5 bg-gray-800 text-white p-2 rounded"
-        >
-          {isSidebarOpen ? <FiX /> : <FiMenu />}
-        </button>
+      {/* Sidebar overlay for mobile */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-40 flex md:hidden">
+          <div className="bg-black bg-opacity-40 w-full" onClick={() => setIsSidebarOpen(false)} />
+          <div className="flex flex-col bg-gray-800 text-white w-64 p-5 space-y-4 h-full z-50">
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="text-2xl self-end mb-4"
+            >
+              <FiX />
+            </button>
+            <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
+            <ul className="space-y-4">
+              <li>
+                <button
+                  onClick={() => { setActiveSection("home"); setIsSidebarOpen(false); }}
+                  className="flex items-center space-x-2 w-full text-left p-2 hover:bg-gray-700 rounded"
+                >
+                  <FiHome /> <span>Carousel</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => { setActiveSection("coupons"); setIsSidebarOpen(false); }}
+                  className="flex items-center space-x-2 w-full text-left p-2 hover:bg-gray-700 rounded"
+                >
+                  <FiTag /> <span>Cards</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => { setActiveSection("orders"); setIsSidebarOpen(false); }}
+                  className="flex items-center space-x-2 w-full text-left p-2 hover:bg-red-600 rounded"
+                >
+                  <FiFileText /> <span>OrderDetails</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => { setActiveSection("customerDetails"); setIsSidebarOpen(false); }}
+                  className="flex items-center space-x-2 w-full text-left p-2 hover:bg-gray-700 rounded"
+                >
+                  <FiUser /> <span>Customer Details</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => { handleLogout(); setIsSidebarOpen(false); }}
+                  className="flex items-center space-x-2 w-full text-left p-2 hover:bg-red-600 rounded"
+                >
+                  <FiLogOut /> <span>Logout</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
 
-        {activeSection === "home" ? (<Admin />) 
-        : activeSection === "coupons" ? (<CardAdmin />) 
-        : activeSection === "customerDetails" ?(<CustomerDetails /> )
-        : activeSection === "orders" ? (<CustomerOrders />) : (<Admin />)
+      {/* Toggler for mobile */}
+      <button
+        onClick={() => setIsSidebarOpen(true)}
+        className="md:hidden fixed top-5 left-5 z-50 bg-gray-800 text-white p-2 rounded"
+      >
+        <FiMenu />
+      </button>
+
+      {/* Main content */}
+      <div className="flex-1 bg-gray-100 p-5 md:ml-64 overflow-y-auto h-screen">
+        {activeSection === "home" ? (<Admin />)
+          : activeSection === "coupons" ? (<CardAdmin />)
+          : activeSection === "customerDetails" ? (<CustomerDetails />)
+          : activeSection === "orders" ? (<CustomerOrders />)
+          : (<Admin />)
         }
-        
       </div>
     </div>
   );
 }
+

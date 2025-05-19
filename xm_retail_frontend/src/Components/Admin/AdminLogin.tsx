@@ -31,26 +31,26 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center text-gray-700 mb-6">Admin Login</h2>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 px-2">
+      <div className="w-full max-w-xs sm:max-w-md p-4 sm:p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-xl sm:text-2xl font-bold text-center text-gray-700 mb-4 sm:mb-6">Admin Login</h2>
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700">Email</label>
+          <div className="mb-3 sm:mb-4">
+            <label className="block text-gray-700 text-sm sm:text-base">Email</label>
             <input
               type="text"
-              className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 sm:px-4 sm:py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-gray-700">Password</label>
+          <div className="mb-3 sm:mb-4">
+            <label className="block text-gray-700 text-sm sm:text-base">Password</label>
             <input
               type="password"
-              className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 sm:px-4 sm:py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -58,7 +58,7 @@ const AdminLogin = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
+            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition text-sm sm:text-base"
           >
             Login
           </button>

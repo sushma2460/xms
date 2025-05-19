@@ -36,6 +36,7 @@ export default function Profile() {
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [orderCount, setOrderCount] = useState(0);
+  const [showInvoicePreview, setShowInvoicePreview] = useState(false);
   const apiUrl = import.meta.env.VITE_APP_SERVER_BASE_URL;
 
   // Fetch user profile
@@ -433,164 +434,401 @@ export default function Profile() {
               >
                 Close
               </button>
-              <button
-                className="bg-green-500 text-white px-4 py-2 rounded-md text-sm hover:bg-green-600 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 duration-200"
-                onClick={async () => {
-                  const doc = new jsPDF();
+              {!showInvoicePreview ? (
+                <button
+                  className="bg-green-500 text-white px-4 py-2 rounded-md text-sm hover:bg-green-600 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 duration-200"
+                  onClick={() => setShowInvoicePreview(true)}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                  </svg>
+                  Preview Invoice
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="bg-gray-700 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-800 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 duration-200"
+                    onClick={() => setShowInvoicePreview(false)}
+                  >
+                    Close Preview
+                  </button>
+                  <button
+                    className="bg-green-500 text-white px-4 py-2 rounded-md text-sm hover:bg-green-600 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 duration-200"
+                    onClick={async () => {
+                      const doc = new jsPDF();
 
-                  // Add your logo (centered)
-                  const logoImg = new Image();
-                  logoImg.src = Logo;
-                  await new Promise((resolve) => {
-                    logoImg.onload = resolve;
-                  });
+                      // Add your logo (centered)
+                      const logoImg = new Image();
+                      logoImg.src = Logo;
+                      await new Promise((resolve) => {
+                        logoImg.onload = resolve;
+                      });
 
-                  // Center logo and 'XM RETAIL' text side by side, with smaller logo
-                  const logoWidth = 18;
-                  const logoHeight = 9;
-                  const logoY = 14;
-                  const text = "XM RETAIL";
-                  doc.setFontSize(14);
-                  const textWidth = doc.getTextWidth(text);
-                  const totalWidth = logoWidth + 3 + textWidth;
-                  const pageWidth = doc.internal.pageSize.getWidth();
-                  const startX = (pageWidth - totalWidth) / 2;
-                  doc.addImage(logoImg, "PNG", startX, logoY, logoWidth, logoHeight);
-                  doc.text(text, startX + logoWidth + 3, logoY + 7);
+                      // Center logo and 'XM RETAIL' text side by side, with smaller logo
+                      const logoWidth = 18;
+                      const logoHeight = 9;
+                      const logoY = 14;
+                      const text = "XM RETAIL";
+                      doc.setFontSize(14);
+                      const textWidth = doc.getTextWidth(text);
+                      const totalWidth = logoWidth + 3 + textWidth;
+                      const pageWidth = doc.internal.pageSize.getWidth();
+                      const startX = (pageWidth - totalWidth) / 2;
+                      doc.addImage(logoImg, "PNG", startX, logoY, logoWidth, logoHeight);
+                      doc.text(text, startX + logoWidth + 3, logoY + 7);
 
-                  // Title with more spacing
-                  doc.setFontSize(18);
-                  doc.setFont("helvetica", "bold");
-                  doc.text("Bill of Supply", pageWidth / 2, logoY + logoHeight + 14, { align: "center" });
-                  doc.setFont("helvetica", "normal");
+                      // Title with more spacing
+                      doc.setFontSize(18);
+                      doc.setFont("helvetica", "bold");
+                      doc.text("Bill of Supply", pageWidth / 2, logoY + logoHeight + 14, { align: "center" });
+                      doc.setFont("helvetica", "normal");
 
-                  // Draw a line below header
-                  doc.setDrawColor(200, 200, 200);
-                  doc.line(20, logoY + logoHeight + 18, pageWidth - 20, logoY + logoHeight + 18);
+                      // Draw a line below header
+                      doc.setDrawColor(200, 200, 200);
+                      doc.line(20, logoY + logoHeight + 18, pageWidth - 20, logoY + logoHeight + 18);
 
-                  // Company Details (left) and Invoice Info (right)
-                  doc.setFontSize(10);
-                  let detailsY = logoY + logoHeight + 28;
-                  
-                  // Company Details (left side)
-                  doc.text("Xstream Minds Pvt Ltd", 20, detailsY);
-                  doc.text("402, Sri Geetanjali Towers, Beside Nexus Mall,", 20, detailsY + 5);
-                  doc.text("Kukatpally Housing Board Colony,", 20, detailsY + 10);
-                  doc.text("Hyderabad, Telangana, India 500072.", 20, detailsY + 15);
+                      // Company Details (left) and Invoice Info (right)
+                      doc.setFontSize(10);
+                      let detailsY = logoY + logoHeight + 28;
+                      
+                      // Company Details (left side)
+                      doc.text("Xstream Minds Pvt Ltd", 20, detailsY);
+                      doc.text("402, Sri Geetanjali Towers, Beside Nexus Mall,", 20, detailsY + 5);
+                      doc.text("Kukatpally Housing Board Colony,", 20, detailsY + 10);
+                      doc.text("Hyderabad, Telangana, India 500072.", 20, detailsY + 15);
 
-                  // Invoice Info (right side) - Adjusted position
-                  const infoX = pageWidth - 80; // Increased distance from right edge
-                  doc.text("Invoice Number: " + (selectedCard.orderId || ''), infoX, detailsY);
-                  doc.text("Invoice Date: " + (selectedCard.issuanceDate ? new Date(selectedCard.issuanceDate).toLocaleDateString() : ''), infoX, detailsY + 5);
-                  doc.text("Payment Method: UPI", infoX, detailsY + 10);
+                      // Invoice Info (right side) - Adjusted position
+                      const infoX = pageWidth - 80; // Increased distance from right edge
+                      doc.text("Invoice Number: " + (selectedCard.orderId || ''), infoX, detailsY);
+                      doc.text("Invoice Date: " + (selectedCard.issuanceDate ? new Date(selectedCard.issuanceDate).toLocaleDateString() : ''), infoX, detailsY + 5);
+                      doc.text("Payment Method: UPI", infoX, detailsY + 10);
 
-                  // Bill To - Increased spacing from previous section
-                  let billToY = detailsY + 30; // Increased spacing
-                  doc.setFontSize(12);
-                  doc.setFont("helvetica", "bold");
-                  doc.text("Bill To:", 20, billToY);
-                  doc.setFont("helvetica", "normal");
-                  doc.setFontSize(10);
-                  doc.text(user.name || '', 20, billToY + 5);
-                  doc.text(user.phone || '', 20, billToY + 10);
-                  doc.text(user.email || '', 20, billToY + 15); // Added email
+                      // Bill To - Increased spacing from previous section
+                      let billToY = detailsY + 30; // Increased spacing
+                      doc.setFontSize(12);
+                      doc.setFont("helvetica", "bold");
+                      doc.text("Bill To:", 20, billToY);
+                      doc.setFont("helvetica", "normal");
+                      doc.setFontSize(10);
+                      doc.text(user.name || '', 20, billToY + 5);
+                      doc.text(user.phone || '', 20, billToY + 10);
+                      doc.text(user.email || '', 20, billToY + 15); // Added email
 
-                  // Product Table Header - Increased spacing
-                  let tableY = billToY + 25; // Increased spacing
-                  
-                  // Table Header Background
-                  doc.setFillColor(255, 153, 0);
-                  doc.rect(20, tableY, pageWidth - 40, 10, "F");
-                  
-                  // Table Header Text
-                  doc.setTextColor(0, 0, 0);
-                  doc.setFont("helvetica", "bold");
-                  doc.text("PRODUCT DESCRIPTION", 22, tableY + 7);
-                  doc.text("QUANTITY", pageWidth / 2, tableY + 7, { align: "center" });
-                  doc.text("UNIT PRICE", pageWidth - 45, tableY + 7, { align: "right" });
-                  doc.setFont("helvetica", "normal");
+                      // Product Table Header - Increased spacing
+                      let tableY = billToY + 25; // Increased spacing
+                      
+                      // Table Header Background
+                      doc.setFillColor(255, 153, 0);
+                      doc.rect(20, tableY, pageWidth - 40, 10, "F");
+                      
+                      // Table Header Text
+                      doc.setTextColor(0, 0, 0);
+                      doc.setFont("helvetica", "bold");
+                      doc.text("PRODUCT DESCRIPTION", 22, tableY + 7);
+                      doc.text("QUANTITY", pageWidth / 2, tableY + 7, { align: "center" });
+                      doc.text("UNIT PRICE", pageWidth - 45, tableY + 7, { align: "right" });
+                      doc.setFont("helvetica", "normal");
 
-                  // Product Table Row - Enhanced styling
-                  let rowY = tableY + 13;
-                  
-                  // Add subtle background to row
-                  doc.setFillColor(245, 245, 245);
-                  doc.rect(20, rowY - 3, pageWidth - 40, 12, "F");
-                  
-                  // Add border to row
-                  doc.setDrawColor(200, 200, 200);
-                  doc.rect(20, rowY - 3, pageWidth - 40, 12);
-                  
-                  // Product details with better spacing
-                  doc.setTextColor(80, 80, 80);
-                  doc.setFontSize(10);
-                  
-                  // Product Name with ellipsis if too long
-                  const productName = selectedCard.productName || '';
-                  const maxWidth = pageWidth / 2 - 45;
-                  let displayName = productName;
-                  if (doc.getTextWidth(productName) > maxWidth) {
-                    while (doc.getTextWidth(displayName + '...') > maxWidth) {
-                      displayName = displayName.slice(0, -1);
-                    }
-                    displayName += '...';
-                  }
-                  doc.text(displayName, 22, rowY + 3);
-                  
-                  // Quantity with centered alignment
-                  doc.text("1", pageWidth / 2, rowY + 3, { align: "center" });
-                  
-                  // Price with right alignment and currency symbol
-                  const price = Number(selectedCard.amount || 0).toLocaleString("en-IN");
-                  doc.text(price, pageWidth - 45, rowY + 3, { align: "right" });
-                  
-                  // Reset text color for next section
-                  doc.setTextColor(0, 0, 0);
-                  doc.setFontSize(12);
+                      // Product Table Row - Enhanced styling
+                      let rowY = tableY + 13;
+                      
+                      // Add subtle background to row
+                      doc.setFillColor(245, 245, 245);
+                      doc.rect(20, rowY - 3, pageWidth - 40, 12, "F");
+                      
+                      // Add border to row
+                      doc.setDrawColor(200, 200, 200);
+                      doc.rect(20, rowY - 3, pageWidth - 40, 12);
+                      
+                      // Product details with better spacing
+                      doc.setTextColor(80, 80, 80);
+                      doc.setFontSize(10);
+                      
+                      // Product Name with ellipsis if too long
+                      const productName = selectedCard.productName || '';
+                      const maxWidth = pageWidth / 2 - 45;
+                      let displayName = productName;
+                      if (doc.getTextWidth(productName) > maxWidth) {
+                        while (doc.getTextWidth(displayName + '...') > maxWidth) {
+                          displayName = displayName.slice(0, -1);
+                        }
+                        displayName += '...';
+                      }
+                      doc.text(displayName, 22, rowY + 3);
+                      
+                      // Quantity with centered alignment
+                      doc.text("1", pageWidth / 2, rowY + 3, { align: "center" });
+                      
+                      // Price with right alignment and currency symbol
+                      const price = Number(selectedCard.amount || 0).toLocaleString("en-IN");
+                      doc.text(price, pageWidth - 45, rowY + 3, { align: "right" });
+                      
+                      // Reset text color for next section
+                      doc.setTextColor(0, 0, 0);
+                      doc.setFontSize(12);
 
-                  // Amounts Section - Increased spacing
-                  let amountsY = rowY + 20; // Adjusted spacing after table row
-                  
-                  // Draw a line above amounts section
-                  doc.setDrawColor(200, 200, 200);
-                  doc.line(20, amountsY - 5, pageWidth - 20, amountsY - 5);
-                  
-                  // Amount details with proper formatting
-                  doc.setFontSize(11);
-                  doc.text("Amount (INR):", pageWidth / 2, amountsY, { align: "center" });
-                  const amount = Number(selectedCard.amount || 0).toLocaleString("en-IN");
-                  doc.text(amount, pageWidth - 45, amountsY, { align: "right" });
-                  
-                  // Net Amount with bold formatting
-                  doc.setFontSize(12);
-                  doc.setFont("helvetica", "bold");
-                  doc.text("Net Amount Paid (INR):", pageWidth / 2, amountsY + 15, { align: "center" });
-                  const netAmount = Number(selectedCard.amount || 0).toLocaleString("en-IN");
-                  doc.text(netAmount, pageWidth - 45, amountsY + 15, { align: "right" });
-                  doc.setFont("helvetica", "normal");
-                  
-                  // Draw a line below amounts section
-                  doc.setDrawColor(200, 200, 200);
-                  doc.line(20, amountsY + 25, pageWidth - 20, amountsY + 25);
+                      // Amounts Section - Increased spacing
+                      let amountsY = rowY + 20; // Adjusted spacing after table row
+                      
+                      // Draw a line above amounts section
+                      doc.setDrawColor(200, 200, 200);
+                      doc.line(20, amountsY - 5, pageWidth - 20, amountsY - 5);
+                      
+                      // Amount details with proper formatting
+                      doc.setFontSize(11);
+                      doc.text("Amount (INR):", pageWidth / 2, amountsY, { align: "center" });
+                      const amount = Number(selectedCard.amount || 0).toLocaleString("en-IN");
+                      doc.text(amount, pageWidth - 45, amountsY, { align: "right" });
+                      
+                      // Net Amount with bold formatting
+                      doc.setFontSize(12);
+                      doc.setFont("helvetica", "bold");
+                      doc.text("Net Amount Paid (INR):", pageWidth / 2, amountsY + 15, { align: "center" });
+                      const netAmount = Number(selectedCard.amount || 0).toLocaleString("en-IN");
+                      doc.text(netAmount, pageWidth - 45, amountsY + 15, { align: "right" });
+                      doc.setFont("helvetica", "normal");
+                      
+                      // Draw a line below amounts section
+                      doc.setDrawColor(200, 200, 200);
+                      doc.line(20, amountsY + 25, pageWidth - 20, amountsY + 25);
 
-                  // Add more space before footer
-                  const footerY = amountsY + 45; // Increased from 40 to 45
+                      // Add more space before footer
+                      const footerY = amountsY + 45; // Increased from 40 to 45
 
-                  // Footer - Adjusted position with more spacing
-                  doc.setFontSize(10);
-                  doc.text("Thank you for your business!", pageWidth / 2, footerY, { align: "center" });
+                      // Footer - Adjusted position with more spacing
+                      doc.setFontSize(10);
+                      doc.text("Thank you for your business!", pageWidth / 2, footerY, { align: "center" });
 
-                  
-                  // Save PDF
-                  doc.save(`GiftCard_Invoice_${selectedCard.orderId}.pdf`);
-                }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                </svg>
-                Download Invoice
-              </button>
+                      // Save PDF
+                      doc.save(`GiftCard_Invoice_${selectedCard.orderId}.pdf`);
+                    }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Download Invoice
+                  </button>
+                </>
+              )}
             </div>
+            {/* Invoice Preview Modal */}
+            {showInvoicePreview && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-11/12 max-w-2xl shadow-2xl relative">
+                  <button
+                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+                    onClick={() => setShowInvoicePreview(false)}
+                  >
+                    <FaTimes size={18} />
+                  </button>
+                  <h3 className="text-lg font-bold mb-4 text-center">Invoice Preview</h3>
+                  <div className="border rounded p-4 bg-gray-50 text-sm mb-4">
+                    <div className="flex items-center justify-center mb-2">
+                      <img src={Logo} alt="Logo" className="h-6 mr-2" />
+                      <span className="font-bold text-base">XM RETAIL</span>
+                    </div>
+                    <div className="text-center font-bold text-lg mb-2">Bill of Supply</div>
+                    <div className="flex justify-between mb-1">
+                      <span>Invoice Number:</span>
+                      <span>{selectedCard.orderId}</span>
+                    </div>
+                    <div className="flex justify-between mb-1">
+                      <span>Invoice Date:</span>
+                      <span>{new Date(selectedCard.issuanceDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between mb-1">
+                      <span>Payment Method:</span>
+                      <span>UPI</span>
+                    </div>
+                    <div className="mt-2 font-semibold">Bill To:</div>
+                    <div className="ml-2 text-gray-700">
+                      <div>{user.name}</div>
+                      <div>{user.phone}</div>
+                      <div>{user.email}</div>
+                    </div>
+                    <div className="mt-3 border-t pt-2">
+                      <div className="flex justify-between">
+                        <span>Product:</span>
+                        <span>{selectedCard.productName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Quantity:</span>
+                        <span>1</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Unit Price:</span>
+                        <span>₹{selectedCard.amount}</span>
+                      </div>
+                      <div className="flex justify-between font-bold">
+                        <span>Net Amount Paid:</span>
+                        <span>₹{selectedCard.amount}</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 text-center text-xs text-gray-500">
+                      Thank you for your business!
+                    </div>
+                  </div>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      className="bg-green-500 text-white px-4 py-2 rounded-md text-sm hover:bg-green-600 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 duration-200"
+                      onClick={async () => {
+                        const doc = new jsPDF();
+
+                        // Add your logo (centered)
+                        const logoImg = new Image();
+                        logoImg.src = Logo;
+                        await new Promise((resolve) => {
+                          logoImg.onload = resolve;
+                        });
+
+                        // Center logo and 'XM RETAIL' text side by side, with smaller logo
+                        const logoWidth = 18;
+                        const logoHeight = 9;
+                        const logoY = 14;
+                        const text = "XM RETAIL";
+                        doc.setFontSize(14);
+                        const textWidth = doc.getTextWidth(text);
+                        const totalWidth = logoWidth + 3 + textWidth;
+                        const pageWidth = doc.internal.pageSize.getWidth();
+                        const startX = (pageWidth - totalWidth) / 2;
+                        doc.addImage(logoImg, "PNG", startX, logoY, logoWidth, logoHeight);
+                        doc.text(text, startX + logoWidth + 3, logoY + 7);
+
+                        // Title with more spacing
+                        doc.setFontSize(18);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("Bill of Supply", pageWidth / 2, logoY + logoHeight + 14, { align: "center" });
+                        doc.setFont("helvetica", "normal");
+
+                        // Draw a line below header
+                        doc.setDrawColor(200, 200, 200);
+                        doc.line(20, logoY + logoHeight + 18, pageWidth - 20, logoY + logoHeight + 18);
+
+                        // Company Details (left) and Invoice Info (right)
+                        doc.setFontSize(10);
+                        let detailsY = logoY + logoHeight + 28;
+                        
+                        // Company Details (left side)
+                        doc.text("Xstream Minds Pvt Ltd", 20, detailsY);
+                        doc.text("402, Sri Geetanjali Towers, Beside Nexus Mall,", 20, detailsY + 5);
+                        doc.text("Kukatpally Housing Board Colony,", 20, detailsY + 10);
+                        doc.text("Hyderabad, Telangana, India 500072.", 20, detailsY + 15);
+
+                        // Invoice Info (right side) - Adjusted position
+                        const infoX = pageWidth - 80; // Increased distance from right edge
+                        doc.text("Invoice Number: " + (selectedCard.orderId || ''), infoX, detailsY);
+                        doc.text("Invoice Date: " + (selectedCard.issuanceDate ? new Date(selectedCard.issuanceDate).toLocaleDateString() : ''), infoX, detailsY + 5);
+                        doc.text("Payment Method: UPI", infoX, detailsY + 10);
+
+                        // Bill To - Increased spacing from previous section
+                        let billToY = detailsY + 30; // Increased spacing
+                        doc.setFontSize(12);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("Bill To:", 20, billToY);
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(10);
+                        doc.text(user.name || '', 20, billToY + 5);
+                        doc.text(user.phone || '', 20, billToY + 10);
+                        doc.text(user.email || '', 20, billToY + 15); // Added email
+
+                        // Product Table Header - Increased spacing
+                        let tableY = billToY + 25; // Increased spacing
+                        
+                        // Table Header Background
+                        doc.setFillColor(255, 153, 0);
+                        doc.rect(20, tableY, pageWidth - 40, 10, "F");
+                        
+                        // Table Header Text
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("PRODUCT DESCRIPTION", 22, tableY + 7);
+                        doc.text("QUANTITY", pageWidth / 2, tableY + 7, { align: "center" });
+                        doc.text("UNIT PRICE", pageWidth - 45, tableY + 7, { align: "right" });
+                        doc.setFont("helvetica", "normal");
+
+                        // Product Table Row - Enhanced styling
+                        let rowY = tableY + 13;
+                        
+                        // Add subtle background to row
+                        doc.setFillColor(245, 245, 245);
+                        doc.rect(20, rowY - 3, pageWidth - 40, 12, "F");
+                        
+                        // Add border to row
+                        doc.setDrawColor(200, 200, 200);
+                        doc.rect(20, rowY - 3, pageWidth - 40, 12);
+                        
+                        // Product details with better spacing
+                        doc.setTextColor(80, 80, 80);
+                        doc.setFontSize(10);
+                        
+                        // Product Name with ellipsis if too long
+                        const productName = selectedCard.productName || '';
+                        const maxWidth = pageWidth / 2 - 45;
+                        let displayName = productName;
+                        if (doc.getTextWidth(productName) > maxWidth) {
+                          while (doc.getTextWidth(displayName + '...') > maxWidth) {
+                            displayName = displayName.slice(0, -1);
+                          }
+                          displayName += '...';
+                        }
+                        doc.text(displayName, 22, rowY + 3);
+                        
+                        // Quantity with centered alignment
+                        doc.text("1", pageWidth / 2, rowY + 3, { align: "center" });
+                        
+                        // Price with right alignment and currency symbol
+                        const price = Number(selectedCard.amount || 0).toLocaleString("en-IN");
+                        doc.text(price, pageWidth - 45, rowY + 3, { align: "right" });
+                        
+                        // Reset text color for next section
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFontSize(12);
+
+                        // Amounts Section - Increased spacing
+                        let amountsY = rowY + 20; // Adjusted spacing after table row
+                        
+                        // Draw a line above amounts section
+                        doc.setDrawColor(200, 200, 200);
+                        doc.line(20, amountsY - 5, pageWidth - 20, amountsY - 5);
+                        
+                        // Amount details with proper formatting
+                        doc.setFontSize(11);
+                        doc.text("Amount (INR):", pageWidth / 2, amountsY, { align: "center" });
+                        const amount = Number(selectedCard.amount || 0).toLocaleString("en-IN");
+                        doc.text(amount, pageWidth - 45, amountsY, { align: "right" });
+                        
+                        // Net Amount with bold formatting
+                        doc.setFontSize(12);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("Net Amount Paid (INR):", pageWidth / 2, amountsY + 15, { align: "center" });
+                        const netAmount = Number(selectedCard.amount || 0).toLocaleString("en-IN");
+                        doc.text(netAmount, pageWidth - 45, amountsY + 15, { align: "right" });
+                        doc.setFont("helvetica", "normal");
+                        
+                        // Draw a line below amounts section
+                        doc.setDrawColor(200, 200, 200);
+                        doc.line(20, amountsY + 25, pageWidth - 20, amountsY + 25);
+
+                        // Add more space before footer
+                        const footerY = amountsY + 45; // Increased from 40 to 45
+
+                        // Footer - Adjusted position with more spacing
+                        doc.setFontSize(10);
+                        doc.text("Thank you for your business!", pageWidth / 2, footerY, { align: "center" });
+
+                        // Save PDF
+                        doc.save(`GiftCard_Invoice_${selectedCard.orderId}.pdf`);
+                      }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                      </svg>
+                      Download Invoice
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

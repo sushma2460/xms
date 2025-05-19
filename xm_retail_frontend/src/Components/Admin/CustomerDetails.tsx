@@ -35,68 +35,82 @@ const CustomerData: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "2rem" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "1.5rem", color: "#333" }}>
+    <div className="max-w-3xl mx-auto p-2 sm:p-6">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center text-gray-800">
         Customer List
       </h2>
 
       {loading ? (
-        <p style={{ textAlign: "center" }}>Loading customer data...</p>
+        <p className="text-center">Loading customer data...</p>
       ) : error ? (
-        <p style={{ textAlign: "center", color: "red" }}>{error}</p>
+        <p className="text-center text-red-600">{error}</p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-            }}
-          >
-            <thead style={{ backgroundColor: "#f4f4f4" }}>
-              <tr>
-                <th style={thStyle}>ID</th>
-                <th style={thStyle}>Name</th>
-                <th style={thStyle}>Email</th>
-                <th style={thStyle}>Phone</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map((customer, index) => (
-                <tr
-                  key={customer.id}
-                  style={{
-                    backgroundColor: index % 2 === 0 ? "#fff" : "#fafafa",
-                    transition: "background-color 0.3s",
-                  }}
-                >
-                  <td style={tdStyle}>{customer.id}</td>
-                  <td style={tdStyle}>{customer.name}</td>
-                  <td style={tdStyle}>{customer.email}</td>
-                  <td style={tdStyle}>{customer.phone}</td>
+        <>
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full border-collapse shadow rounded-lg bg-white">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="py-3 px-4 text-left font-semibold text-gray-700">
+                    ID
+                  </th>
+                  <th className="py-3 px-4 text-left font-semibold text-gray-700">
+                    Name
+                  </th>
+                  <th className="py-3 px-4 text-left font-semibold text-gray-700">
+                    Email
+                  </th>
+                  <th className="py-3 px-4 text-left font-semibold text-gray-700">
+                    Phone
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {customers.map((customer, index) => (
+                  <tr
+                    key={customer.id}
+                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
+                    <td className="py-2 px-4">{customer.id}</td>
+                    <td className="py-2 px-4">{customer.name}</td>
+                    <td className="py-2 px-4">{customer.email}</td>
+                    <td className="py-2 px-4">{customer.phone}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card/List */}
+          <div className="md:hidden space-y-4">
+            {customers.map((customer) => (
+              <div
+                key={customer.id}
+                className="bg-white rounded-lg shadow p-4"
+              >
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-gray-700">ID:</span>
+                  <span>{customer.id}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-semibold text-gray-700">Name:</span>
+                  <span>{customer.name}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-semibold text-gray-700">Email:</span>
+                  <span>{customer.email}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="font-semibold text-gray-700">Phone:</span>
+                  <span>{customer.phone}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
-};
-
-// Styles
-const thStyle: React.CSSProperties = {
-  padding: "12px",
-  textAlign: "left",
-  borderBottom: "2px solid #ccc",
-  fontWeight: 600,
-  color: "#333",
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "10px 12px",
-  borderBottom: "1px solid #eee",
-  color: "#555",
 };
 
 export default CustomerData;

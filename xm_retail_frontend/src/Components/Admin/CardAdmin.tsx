@@ -174,16 +174,30 @@ const CardAdmin = () => {
         <h3 className="text-xl font-bold mt-8">Cards List</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-5">
           {cards.map((card) => (
-            <div key={card.id} className="bg-white p-4 rounded-lg shadow-md">
-              <img src={`${apiUrl}/uploads/${card.image}`} alt={card.name} className="w-full h-32 object-cover rounded-md" />
-              <h4 className="font-bold mt-2">{card.name}</h4>
-              <p className="text-sm">Category: {card.category}</p>
-              <p className="text-sm">Cashback: {card.cashback}%</p>
-              <p className="text-sm">Validity: {card.validityMonths} months</p>
-              <p className="text-sm">Amounts: {card.amounts.join(", ")}</p>
-              <div className="flex space-x-2 mt-3">
-                <button onClick={() => handleEdit(card)} className="bg-yellow-500 text-white px-3 py-1 rounded">Edit</button>
-                <button onClick={() => handleDelete(card.id, card.name)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+            <div key={card.id} className="bg-white p-4 rounded-lg shadow-md flex flex-col">
+              <img
+                src={`${apiUrl}/uploads/${card.image}`}
+                alt={card.name}
+                className="w-full h-40 sm:h-48 object-cover rounded-md mb-2"
+              />
+              <h4 className="font-bold mt-2 text-base sm:text-lg">{card.name}</h4>
+              <p className="text-xs sm:text-sm">Category: {card.category}</p>
+              <p className="text-xs sm:text-sm">Cashback: {card.cashback}%</p>
+              <p className="text-xs sm:text-sm">Validity: {card.validityMonths} months</p>
+              <p className="text-xs sm:text-sm break-words">Amounts: {card.amounts.join(", ")}</p>
+              <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                <button
+                  onClick={() => handleEdit(card)}
+                  className="bg-yellow-500 text-white px-3 py-2 rounded text-sm w-full sm:w-auto"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(card.id, card.name)}
+                  className="bg-red-500 text-white px-3 py-2 rounded text-sm w-full sm:w-auto"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))}
