@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import App from "../../App";
 
 const Home: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -22,9 +22,9 @@ const Home: React.FC = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="flex justify-center items-center h-[80vh]">
+      {/* <main className="flex justify-center items-center h-[80vh]">
         <h2 className="text-2xl font-semibold">Welcome to the Home Page!</h2>
-      </main> 
+      </main>  */}
     </div>
   );
 };

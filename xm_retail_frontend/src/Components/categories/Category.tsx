@@ -64,42 +64,60 @@ const Category: React.FC<CategoryProps> = ({ setSelectedCategory }) => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-sm p-6">
-      <div className="w-full py-6 px-4">
-        <h2 className="text-xl font-semibold mb-4">TOP CATEGORIES</h2>
+    <div className="relative overflow-hidden rounded-sm p-2 sm:p-4 md:p-6">
+      <div className="w-full py-4 px-2 sm:py-6 sm:px-4">
+        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
+          TOP CATEGORIES
+        </h2>
         <div className="relative w-full">
-          {/* Left Button */}
+          {/* Left Button - always show, but smaller on mobile */}
           <button
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md z-10"
+            className="flex absolute left-0 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md z-10 sm:p-2 p-1"
             onClick={scrollLeft}
+            aria-label="Scroll Left"
+            style={{ display: categories.length > 2 ? "flex" : "none" }}
           >
-            <FaChevronLeft size={20} />
+            <FaChevronLeft size={20} className="hidden sm:block" />
+            <FaChevronLeft size={16} className="block sm:hidden" />
           </button>
 
           {/* Category Slider */}
-          <div ref={sliderRef} className="flex overflow-hidden scrollbar-hide gap-4 p-2 scroll-smooth">
+          <div
+            ref={sliderRef}
+            className="flex overflow-x-auto gap-3 sm:gap-4 p-2 scroll-smooth scrollbar-hide"
+            style={{
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none", // Firefox
+              msOverflowStyle: "none", // IE and Edge
+            }}
+          >
             {categories.map((category, index) => (
               <div
                 key={index}
-                className="flex flex-col items-center bg-white rounded-lg shadow-md px-6 py-4 min-w-[200px]"
-                onClick={() => handleCategoryClick(category.name)} // Set category when clicked
+                className="flex flex-col items-center bg-white rounded-lg shadow-md px-3 py-2 sm:px-6 sm:py-4 min-w-[110px] sm:min-w-[180px] md:min-w-[200px] cursor-pointer hover:shadow-lg transition"
+                onClick={() => handleCategoryClick(category.name)}
               >
                 <img
                   src={category.icon}
                   alt={category.name}
-                  className="w-20 h-15 mb-2"
+                  className="w-10 h-10 sm:w-20 sm:h-16 mb-2 object-contain"
                 />
-                <p className="text-sm font-medium">{category.name}</p>
+                <p className="text-xs sm:text-sm font-medium text-center">
+                  {category.name}
+                </p>
               </div>
             ))}
           </div>
 
-          {/* Right Button */}
+          {/* Right Button - always show, but smaller on mobile */}
           <button
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md z-10"
+            className="flex absolute right-0 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md z-10 sm:p-2 p-1"
             onClick={scrollRight}
+            aria-label="Scroll Right"
+            style={{ display: categories.length > 2 ? "flex" : "none" }}
           >
-            <FaChevronRight size={20} />
+            <FaChevronRight size={20} className="hidden sm:block" />
+            <FaChevronRight size={16} className="block sm:hidden" />
           </button>
         </div>
       </div>

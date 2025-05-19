@@ -46,29 +46,36 @@ const Categorycards: React.FC = () => {
   if (error) return <p className="text-center text-red-500">{error}</p>;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-center">Categories</h1>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+    <div className="p-2 sm:p-4 md:p-6 max-w-7xl mx-auto">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">
+        Categories
+      </h1>
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
         {categoryList.map((category) => (
           <div
             key={category.id}
-            className="bg-white rounded-xl shadow hover:shadow-md transition-all p-4 flex flex-col justify-between"
+            className="bg-white rounded-xl shadow hover:shadow-md transition-all p-3 sm:p-4 flex flex-col justify-between min-h-[170px]"
           >
             <div>
-              <p><span className="font-bold">ID:</span> {category.id}</p>
-              <p><span className="font-bold">Name:</span> {category.name}</p>
-              <p><span className="font-bold">URL:</span> {category.url || "N/A"}</p>
-              <p>
+              <p className="text-xs sm:text-sm">
+                <span className="font-bold">ID:</span> {category.id}
+              </p>
+              <p className="text-sm sm:text-base">
+                <span className="font-bold">Name:</span> {category.name}
+              </p>
+              <p className="text-xs sm:text-sm">
+                <span className="font-bold">URL:</span> {category.url || "N/A"}
+              </p>
+              <p className="text-xs sm:text-sm">
                 <span className="font-bold">Subcategories:</span>{" "}
                 {category.subcategories?.length
                   ? category.subcategories.map((sub) => sub.name).join(", ")
                   : "None"}
               </p>
             </div>
-            
             <button
-              onClick={() => navigate(`/products/${category.id}`)} // ✅ Navigate to product list
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              onClick={() => navigate(`/products/${category.id}`)}
+              className="mt-3 sm:mt-4 bg-blue-600 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-blue-700 transition"
             >
               View Details
             </button>
