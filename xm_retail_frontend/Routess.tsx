@@ -10,7 +10,7 @@ import AdminLogin from "./src/Components/Admin/AdminLogin";
 import AdminProtectedRoute from "./src/Components/AdminProtectedRoute";
 import DashBoard from "./src/Components/Admin/DashBoard";
 import ProductDetails from "./src/Components/Cards/productdetails";
-import CartPage from "./src/Components/Cards/CartPage";
+import CartPage from "./src/Components/Cart/CartPage";
 
 function Routess() {
   return (

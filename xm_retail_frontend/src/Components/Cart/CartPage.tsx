@@ -201,82 +201,88 @@ const CartPage: React.FC = () => {
   return (
     <>
       <Nav />
-      <div className="p-2 sm:p-4 md:p-6 max-w-4xl mx-auto mt-8">
-        <div className="text-gray-500 text-xs sm:text-sm mb-4">
-          <span
-            className="text-orange-500 cursor-pointer"
-            onClick={() => navigate("/products/121")}
-          >
-            Products
-          </span>{" "}
-          / <span className="font-semibold">Cart</span>
-        </div>
+  
+      <div className="p-6 max-w-4xl mx-auto m-12">
 
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">Your Cart</h1>
+        <div className="text-gray-500 text-sm mb-4">
+        <span
+          className="text-orange-500 cursor-pointer"
+          onClick={() => navigate("/products/121")}
+        >
+          Products
+        </span>{" "}
+        / <span className="font-semibold">Cart</span>
+      </div>
+
+        <h1 className="text-3xl font-bold">Your Cart</h1>
 
         {cart.length === 0 ? (
-          <p className="text-center text-gray-600">Your cart is empty.</p>
+          <p>Your cart is empty.</p>
         ) : (
-          <div>
-            {/* Desktop/Table View */}
-            <div className="hidden sm:block overflow-x-auto rounded">
-              <table className="w-full min-w-[600px] mb-6 border border-gray-200 rounded text-xs sm:text-sm">
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <table className="w-full mb-6 border border-gray-200 rounded">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="p-2 text-left whitespace-nowrap">Product</th>
-                    <th className="p-2 text-center whitespace-nowrap">Qty</th>
-                    <th className="p-2 text-right whitespace-nowrap">Price</th>
-                    <th className="p-2 text-right whitespace-nowrap">Subtotal</th>
-                    <th className="p-2 text-center whitespace-nowrap">Remove</th>
+                    <th className="p-2 text-left">Product</th>
+                    <th className="p-2 text-center">Qty</th>
+                    <th className="p-2 text-right">Price</th>
+                    <th className="p-2 text-right">Subtotal</th>
+                    <th className="p-2 text-center">Remove</th>
                   </tr>
                 </thead>
                 <tbody>
                   {cart.map((item) => (
                     <tr key={`${item.sku}-${item.denomination}`}>
-                      <td className="p-2 flex items-center gap-2 min-w-[140px]">
-                        <img src={item.image} alt={item.name} className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded" />
+                      <td className="p-2 flex items-center gap-2">
+                        <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded" />
                         <div>
-                          <p className="font-semibold text-xs sm:text-sm">{item.name}</p>
-                          <p className="text-xs text-gray-600">
+                          <p className="font-semibold">{item.name}</p>
+                          <p className="text-sm text-gray-600">
                             Denomination: {item.currency.symbol}
                             {item.denomination}
                           </p>
                         </div>
                       </td>
-                      <td className="p-2 text-center min-w-[60px]">
-                        <div className="flex justify-center">
+                      <td className="p-2 text-center">
+                        <motion.div
+                          className="flex justify-center"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
                           <div className="inline-flex bg-white shadow-sm border rounded-full overflow-hidden">
                             <button
                               onClick={() => updateQuantity(item.sku, item.denomination, -1)}
-                              className="px-2 sm:px-3 py-1 bg-gray-100 hover:bg-red-200 transition text-red-600 font-semibold text-base focus:outline-none"
+                              className="px-4 py-1 bg-gray-100 hover:bg-red-200 transition text-red-600 font-semibold text-lg focus:outline-none"
                             >
                               −
                             </button>
-                            <span className="px-2 sm:px-3 py-1 text-center font-medium bg-white">{item.quantity}</span>
+                            <span className="px-4 py-1 text-center font-medium bg-white">{item.quantity}</span>
                             <button
                               onClick={() => updateQuantity(item.sku, item.denomination, 1)}
-                              className="px-2 sm:px-3 py-1 bg-gray-100 hover:bg-green-200 transition text-green-600 font-semibold text-base focus:outline-none"
+                              className="px-4 py-1 bg-gray-100 hover:bg-green-200 transition text-green-600 font-semibold text-lg focus:outline-none"
                             >
                               +
                             </button>
                           </div>
-                        </div>
+                        </motion.div>
                       </td>
-                      <td className="p-2 text-right min-w-[70px]">
+                      <td className="p-2 text-right">
                         {item.currency.symbol}
                         {item.denomination}
                       </td>
-                      <td className="p-2 text-right min-w-[80px]">
+                      <td className="p-2 text-right">
                         {item.currency.symbol}
                         {Number(item.denomination) * item.quantity}
                       </td>
-                      <td className="p-2 text-center min-w-[60px]">
+                      <td className="p-2 text-center">
                         <button
                           onClick={() => removeItem(item.sku, item.denomination)}
                           className="text-red-600 hover:text-red-800"
                           title="Remove Item"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={18} width={18} height={18} />
                         </button>
                       </td>
                     </tr>
@@ -295,88 +301,76 @@ const CartPage: React.FC = () => {
                 </tfoot>
               </table>
             </div>
-            {/* Mobile Card View */}
-            <div className="sm:hidden flex flex-col gap-4">
+
+            {/* Mobile Card/List */}
+            <div className="md:hidden space-y-4">
               {cart.map((item) => (
-                <div key={`${item.sku}-${item.denomination}`} className="bg-white rounded-lg shadow p-3 flex flex-col gap-2">
+                <div key={`${item.sku}-${item.denomination}`} className="bg-white rounded shadow p-4 flex flex-col gap-2">
                   <div className="flex items-center gap-3">
-                    <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded" />
+                    <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded" />
                     <div>
                       <p className="font-semibold">{item.name}</p>
                       <p className="text-xs text-gray-600">
-                        Denomination: {item.currency.symbol}
-                        {item.denomination}
+                        Denomination: {item.currency.symbol}{item.denomination}
                       </p>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center text-xs mt-2">
+                  <div className="flex justify-between items-center text-sm mt-2">
                     <span>Qty:</span>
                     <div className="inline-flex bg-white shadow-sm border rounded-full overflow-hidden">
                       <button
                         onClick={() => updateQuantity(item.sku, item.denomination, -1)}
-                        className="px-2 py-1 bg-gray-100 hover:bg-red-200 transition text-red-600 font-semibold text-base focus:outline-none"
-                      >
-                        −
-                      </button>
-                      <span className="px-3 py-1 text-center font-medium bg-white">{item.quantity}</span>
+                        className="px-3 py-1 bg-gray-100 hover:bg-red-200 text-red-600 font-semibold"
+                      >−</button>
+                      <span className="px-4 py-1">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.sku, item.denomination, 1)}
-                        className="px-2 py-1 bg-gray-100 hover:bg-green-200 transition text-green-600 font-semibold text-base focus:outline-none"
-                      >
-                        +
-                      </button>
+                        className="px-3 py-1 bg-gray-100 hover:bg-green-200 text-green-600 font-semibold"
+                      >+</button>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
+                  <div className="flex justify-between text-sm">
                     <span>Price:</span>
-                    <span>
-                      {item.currency.symbol}
-                      {item.denomination}
-                    </span>
+                    <span>{item.currency.symbol}{item.denomination}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
+                  <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
-                    <span>
-                      {item.currency.symbol}
-                      {Number(item.denomination) * item.quantity}
-                    </span>
+                    <span>{item.currency.symbol}{Number(item.denomination) * item.quantity}</span>
                   </div>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => removeItem(item.sku, item.denomination)}
-                      className="text-red-600 hover:text-red-800 text-xs flex items-center gap-1"
-                      title="Remove Item"
-                    >
-                      <Trash2 size={16} /> Remove
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => removeItem(item.sku, item.denomination)}
+                    className="text-red-600 hover:text-red-800 text-right mt-2"
+                    title="Remove Item"
+                  >
+                    Remove
+                  </button>
                 </div>
               ))}
-              {/* Total for mobile */}
-              <div className="bg-gray-100 rounded-lg p-3 text-right font-bold">
-                Total: {cart[0]?.currency.symbol}
-                {totalAmount}
+              {/* Total */}
+              <div className="flex justify-between font-bold text-lg mt-4">
+                <span>Total:</span>
+                <span>{cart[0]?.currency.symbol}{totalAmount}</span>
               </div>
             </div>
-          </div>
+          </>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mt-4">
+        <div className="flex flex-col md:flex-row gap-4 mt-6">
+          <button
+            onClick={() => navigate("/products/121")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded shadow-md transition w-full md:w-auto"
+          >
+            Continue Shopping
+          </button>
           <button
             onClick={handleCheckout}
             disabled={isProcessing || cart.length === 0}
             className={`${
               isProcessing ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
-            } text-white px-4 sm:px-6 py-2 sm:py-3 rounded shadow-md transition w-full sm:w-auto`}
+            } text-white px-6 py-3 rounded shadow-md transition w-full md:w-auto`}
           >
             {isProcessing ? "Processing..." : "Checkout"}
           </button>
-          <Link
-            to="/products/121"
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded shadow-md transition w-full sm:w-auto text-center"
-          >
-            Continue Shopping
-          </Link>
         </div>
 
         <AnimatePresence>
@@ -388,47 +382,45 @@ const CartPage: React.FC = () => {
               exit={{ opacity: 0 }}
             >
               <motion.div
-                className="bg-white rounded-xl p-3 sm:p-6 max-w-xs sm:max-w-2xl w-full shadow-xl relative overflow-auto max-h-[80vh]"
+                className="bg-white rounded-xl p-6 max-w-2xl w-full shadow-xl relative overflow-auto max-h-[80vh]"
                 initial={{ y: "-100vh", rotate: -5 }}
                 animate={{ y: 0, rotate: 0 }}
                 exit={{ y: "100vh", rotate: 5 }}
               >
-                <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4 text-center">🎉 Order Successful!</h2>
-                <p className="mb-4 sm:mb-6 text-center text-xs sm:text-base">Thank you for your purchase. Here are your gift card details:</p>
+                <h2 className="text-xl font-bold mb-4 text-center">🎉 Order Successful!</h2>
+                <p className="mb-6 text-center">Thank you for your purchase. Here are your gift card details:</p>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs sm:text-sm mb-4 border border-gray-200">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="p-2 text-left">SKU</th>
-                        <th className="p-2 text-left">Amount</th>
-                        <th className="p-2 text-left">Card No</th>
-                        <th className="p-2 text-left">PIN</th>
-                        <th className="p-2 text-left">Validity</th>
-                        <th className="p-2 text-left">Issued On</th>
-                        <th className="p-2 text-left">Status</th>
+                <table className="w-full text-sm mb-4 border border-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="p-2 text-left">SKU</th>
+                      <th className="p-2 text-left">Amount</th>
+                      <th className="p-2 text-left">Card No</th>
+                      <th className="p-2 text-left">PIN</th>
+                      <th className="p-2 text-left">Validity</th>
+                      <th className="p-2 text-left">Issued On</th>
+                      <th className="p-2 text-left">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orderDataList.map((orderData, index) => (
+                      <tr key={index} className="border-t">
+                        <td className="p-2">{orderData.sku}</td>
+                        <td className="p-2">₹{orderData.amount}</td>
+                        <td className="p-2">{orderData.cardNumber}</td>
+                        <td className="p-2">{orderData.cardPin}</td>
+                        <td className="p-2">{orderData.validity}</td>
+                        <td className="p-2">{orderData.issuanceDate}</td>
+                        <td className="p-2 text-green-600 font-semibold">{orderData.status}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {orderDataList.map((orderData, index) => (
-                        <tr key={index} className="border-t">
-                          <td className="p-2">{orderData.sku}</td>
-                          <td className="p-2">₹{orderData.amount}</td>
-                          <td className="p-2">{orderData.cardNumber}</td>
-                          <td className="p-2">{orderData.cardPin}</td>
-                          <td className="p-2">{orderData.validity}</td>
-                          <td className="p-2">{orderData.issuanceDate}</td>
-                          <td className="p-2 text-green-600 font-semibold">{orderData.status}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
 
                 <div className="flex justify-center">
                   <button
                     onClick={() => setShowSuccessModal(false)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
                   >
                     Close
                   </button>

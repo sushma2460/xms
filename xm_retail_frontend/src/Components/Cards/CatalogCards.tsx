@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 interface ProductImage {
-  thumbnail?: string;
+  mobile?: string;
   base?: string;
 }
 
@@ -19,9 +19,10 @@ const Product: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-  const [visibleCount, setVisibleCount] = useState<number>(10); // Show only 2 rows initially
+  const [visibleCount, setVisibleCount] = useState<number>(10);
 
   useEffect(() => {
+    // Only fetch the products from the database, do not sync catalog here
     axios
       .get("http://localhost:4000/api/woohoo/catalog")
       .then((response) => {
@@ -65,29 +66,31 @@ const Product: React.FC = () => {
             selectedProduct ? "md:grid-cols-2" : "md:grid-cols-5"
           }`}
         >
-          {productList.slice(0, visibleCount).map((product) => {
-            const imageUrl = product.image?.thumbnail?.trim() || "https://via.placeholder.com/150";
+          {productList
+            .filter((product) => product && product.name && product.sku)
+            .slice(0, visibleCount)
+            .map((product) => {
+              const imageUrl = product.image || ""; // Extract the URL string
 
-
-            return (
-              <div
-                key={product.id ?? Math.random()}
-                className="bg-white rounded-lg shadow-md p-3 flex flex-col items-center cursor-pointer hover:shadow-lg transition"
-                onClick={() => handleProductClick(product.sku)}
-              >
-                <img
-                  src={imageUrl}
-                  alt={product.name ?? "Product"}
-                  className="w-full h-40 object-cover rounded mb-2"
-                />
-                <h2 className="text-sm font-semibold text-center text-gray-800">
-                  {product.name ?? "No Name"}
-                </h2>
-                <p className="text-xs text-gray-500">SKU: {product.sku ?? "N/A"}</p>
-                <p className="text-xs text-gray-500">Type: {product.productType ?? "N/A"}</p>
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={product.id ?? Math.random()}
+                  className="bg-white rounded-lg shadow-md p-3 flex flex-col items-center cursor-pointer hover:shadow-lg transition"
+                  onClick={() => handleProductClick(product.sku)}
+                >
+                  <img
+                    src={imageUrl}
+                    alt={product.name ?? "Product"}
+                    className="w-full h-40 object-cover rounded mb-2"
+                  />
+                  <h2 className="text-sm font-semibold text-center text-gray-800">
+                    {product.name ?? "No Name"}
+                  </h2>
+                  <p className="text-xs text-gray-500">SKU: {product.sku ?? "N/A"}</p>
+                  <p className="text-xs text-gray-500">Type: {product.productType ?? "N/A"}</p>
+                </div>
+              );
+            })}
         </div>
 
         {/* Selected Product Details */}
@@ -104,9 +107,9 @@ const Product: React.FC = () => {
               <strong>Type:</strong> {selectedProduct.productType ?? "N/A"}
             </p>
 
-            {selectedProduct.image?.base && (
+            {selectedProduct.image && (selectedProduct.image.mobile || selectedProduct.image.base) && (
               <img
-                src={selectedProduct.image.base}
+                src={selectedProduct.image.mobile || selectedProduct.image.base}
                 alt={selectedProduct.name ?? "Product"}
                 className="mt-4 mx-auto rounded"
                 style={{ maxWidth: "200px" }}
@@ -116,28 +119,26 @@ const Product: React.FC = () => {
         )}
       </div>
 
-      {/* See More Button */}
       {/* See More / See Less Buttons */}
-{productList.length > 10 && (
-  <div className="flex justify-center mt-6">
-    {isSeeMoreVisible ? (
-      <button
-        onClick={() => setVisibleCount(productList.length)}
-        className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition"
-      >
-        See More
-      </button>
-    ) : (
-      <button
-        onClick={() => setVisibleCount(10)}
-        className="bg-gray-600 text-white px-6 py-2 rounded shadow hover:bg-gray-700 transition"
-      >
-        See Less
-      </button>
-    )}
-  </div>
-)}
-
+      {productList.length > 10 && (
+        <div className="flex justify-center mt-6">
+          {isSeeMoreVisible ? (
+            <button
+              onClick={() => setVisibleCount(productList.length)}
+              className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition"
+            >
+              See More
+            </button>
+          ) : (
+            <button
+              onClick={() => setVisibleCount(10)}
+              className="bg-gray-600 text-white px-6 py-2 rounded shadow hover:bg-gray-700 transition"
+            >
+              See Less
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

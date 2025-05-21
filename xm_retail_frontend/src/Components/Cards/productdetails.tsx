@@ -101,12 +101,9 @@ const ProductDetails: React.FC = () => {
       try {
         if (productSku) {
           const response = await axios.get(
-            `http://localhost:4000/api/woohoo/products/${productSku}/related`
+            `http://localhost:4000/api/woohoo/related-products/${productSku}`
           );
-          const relatedProductsData = response.data?.relatedProducts || [];
-          setRelatedProducts(
-            Array.isArray(relatedProductsData) ? relatedProductsData : []
-          );
+          setRelatedProducts(response.data || []);
         }
       } catch (error) {
         console.error("Error fetching related products:", error);
@@ -377,7 +374,12 @@ const ProductDetails: React.FC = () => {
                       onClick={() => navigate(`/product/${rp.sku}`)}
                     >
                       <img
-                        src={rp.images.thumbnail || rp.images.base}
+                        src={
+                          rp.images?.thumbnail ||
+                          rp.images?.base ||
+                          rp.image || // <-- use the image field from DB
+                          "/placeholder-image.jpg"
+                        }
                         alt={rp.name}
                         className="w-full h-32 object-contain mb-2"
                       />

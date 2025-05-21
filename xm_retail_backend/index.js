@@ -17,6 +17,7 @@ import orderRoutes from "./routes/orderroutes.js"; // Ensure the file extension 
 import Order from "./models/orderModel.js";
 import OrderdetailsRoutes from "./routes/OrderdetailsRoutes.js"; // Ensure the file extension is included
 import searchRoutes from "./routes/search.js"; // Ensure the file extension is included
+import ProductList from "./models/ProductListModel.js"; // Import ProductList model
 
 
 const app = express();
@@ -26,6 +27,10 @@ dotenv.config();
 connectDB();
 //this will sync db and create tables
 await sequelize.sync();
+
+// Sync ProductList model (temporarily, for development only)
+// ProductList.sync({ alter: true }); // or { force: true } to drop and recreate
+
 // Middlewares
 app.use(cors());
 app.use(express.json());

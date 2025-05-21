@@ -1,16 +1,19 @@
 // routes/woohooRoutes.js
 import express from 'express';
-import { getWoohooProductDetails } from '../controllers/WoohooproductdetailsController.js';
-import { getWoohooProducts } from '../controllers/WoohoocatalogController.js';
+import { getProductDetails } from '../controllers/WoohooproductdetailsController.js';
+import { getCatalogFromDB } from '../controllers/WoohoocatalogController.js';
 import { getWoohooCategories } from '../controllers/WoohoocategoryController.js';
-import { getWoohooCategoryProducts,getWoohooRelatedProducts } from '../controllers/WohooproductController.js';
+import { getWoohooCategoryProducts } from '../controllers/WoohooProductListController.js';
+import { getRelatedProductsFromDB } from '../controllers/RelatedProductsController.js';
 
 const router = express.Router();
 
-router.get('/catalog', getWoohooProducts);
+//router.get('/sync-catalog', syncWoohooCatalog); // Call this to sync with Woohoo API
+router.get('/catalog', getCatalogFromDB);       // Frontend should call this to get products
+
 router.get('/category', getWoohooCategories);
 router.get('/category/products/:categoryId', getWoohooCategoryProducts);
-router.get('/product/details/:productSku', getWoohooProductDetails);
-router.get('/products/:productSku/related', getWoohooRelatedProducts);
+router.get('/product/details/:productSku', getProductDetails);
+router.get('/related-products/:productSku', getRelatedProductsFromDB);
 
 export default router;

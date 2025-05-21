@@ -1,7 +1,7 @@
 import express from "express";
 import { Op } from "sequelize";
 import Card from "../models/Card.js";
-import Product from "../models/WoohooCatalogAllProducts.js";
+import Product from "../models/CatalogModel.js";
 import WoohooCategory from "../models/Woohoocategorymodel.js";
 
 const router = express.Router();
