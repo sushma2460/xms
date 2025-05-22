@@ -107,7 +107,7 @@ const Product: React.FC = () => {
               <strong>Type:</strong> {selectedProduct.productType ?? "N/A"}
             </p>
 
-            {selectedProduct.image && (selectedProduct.image.mobile || selectedProduct.image.base) && (
+            {selectedProduct.image && (selectedProduct.image.mobile|| selectedProduct.image.base) && (
               <img
                 src={selectedProduct.image.mobile || selectedProduct.image.base}
                 alt={selectedProduct.name ?? "Product"}

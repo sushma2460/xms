@@ -8,10 +8,13 @@ const ProductList = sequelize.define("ProductList", {
     primaryKey: true,
   },
   name: DataTypes.STRING,
-  description: DataTypes.TEXT,
-  price: DataTypes.FLOAT,
-  image: DataTypes.STRING,
-  // ...other fields...
+  currencyCode: DataTypes.STRING,
+  currencySymbol: DataTypes.STRING,
+  url: DataTypes.STRING,
+  minPrice: DataTypes.STRING,
+  maxPrice: DataTypes.STRING,
+  offer: DataTypes.STRING,
+  image: DataTypes.STRING, // store mobile image only
   categoryId: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -23,7 +26,7 @@ const ProductList = sequelize.define("ProductList", {
   },
 }, {
   timestamps: true,
-  tableName: "ProductList", // Add this line if your table is not pluralized
+  tableName: "ProductList",
 });
 
 WoohooCategory.hasMany(ProductList, { foreignKey: "categoryId" });

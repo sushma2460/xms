@@ -145,12 +145,15 @@ export const syncProductsForAllCategories = async (req, res) => {
           const productData = {
             sku: product.sku,
             name: product.name,
-            description: product.offerShortDesc || null,
-            price: product.minPrice ? parseFloat(product.minPrice) : null,
-            image: product.images?.thumbnail || null,
+            currencyCode: product.currency?.code || null,
+            currencySymbol: product.currency?.symbol || null,
+            url: product.url || null,
+            minPrice: product.minPrice || null,
+            maxPrice: product.maxPrice || null,
+            offer: product.offerShortDesc || null,
+            image: product.images?.mobile || null, // store only mobile image
             categoryId: category.id,
           };
-         // console.log("Upserting product:", productData);
           try {
             if (!dbProduct || JSON.stringify(dbProduct.toJSON()) !== JSON.stringify(productData)) {
               const [instance, created] = await ProductList.upsert(productData, { transaction });
@@ -315,7 +318,7 @@ export const syncAllRelatedProducts = async (req, res) => {
                 name: rel.name,
                 description: rel.offerShortDesc || null,
                 price: rel.minPrice ? parseFloat(rel.minPrice) : null,
-                image: rel.images?.thumbnail || null,
+                image: rel.images?.mobile || null,
                 productSku,
               });
               await RelatedProduct.upsert({
@@ -323,7 +326,7 @@ export const syncAllRelatedProducts = async (req, res) => {
                 name: rel.name,
                 description: rel.offerShortDesc || null,
                 price: rel.minPrice ? parseFloat(rel.minPrice) : null,
-                image: rel.images?.thumbnail || null,
+                image: rel.images?.mobile || null,
                 productSku,
               }, { transaction });
             } catch (err) {

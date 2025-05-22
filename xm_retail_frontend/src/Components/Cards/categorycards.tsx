@@ -51,11 +51,29 @@ const Categorycards: React.FC = () => {
         Categories
       </h1>
       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-        {categoryList.map((category) => (
+        {categoryList.map((category, idx) => (
           <div
             key={category.id}
-            className="bg-white rounded-xl shadow hover:shadow-md transition-all p-3 sm:p-4 flex flex-col justify-between min-h-[170px]"
+            onClick={() => navigate(`/products/${category.id}`)}
+            style={{
+              userSelect: "none",
+              animation: "fadeScaleIn 0.5s",
+              animationDelay: `${idx * 0.07}s`,
+              animationFillMode: "backwards",
+            }}
+            className="bg-white rounded-xl shadow hover:shadow-xl transition-all p-3 sm:p-4 flex flex-col justify-between min-h-[170px] cursor-pointer transform hover:-translate-y-1 hover:scale-105 duration-200"
           >
+            {/* Animation keyframes */}
+            {idx === 0 && (
+              <style>
+                {`
+          @keyframes fadeScaleIn {
+            from { opacity: 0; transform: scale(0.96);}
+            to { opacity: 1; transform: scale(1);}
+          }
+        `}
+              </style>
+            )}
             <div>
               <p className="text-xs sm:text-sm">
                 <span className="font-bold">ID:</span> {category.id}
@@ -74,8 +92,8 @@ const Categorycards: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate(`/products/${category.id}`)}
-              className="mt-3 sm:mt-4 bg-blue-600 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-blue-700 transition"
+              tabIndex={-1}
+              className="mt-3 sm:mt-4 bg-blue-600 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-blue-700 transition pointer-events-none"
             >
               View Details
             </button>

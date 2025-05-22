@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Card from "./Card";
 import axios from "axios";
+ // Import custom CSS for animation
 
 interface CardType {
   id: string;
@@ -35,9 +36,11 @@ const CardApp: React.FC<CardAppProps> = ({ selectedCategory }) => {
     <div className="p-5">
       <h1 className="text-2xl font-bold mb-6 text-center">Most Popular Brands</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-0">
         {visibleCards.map((card) => (
-          <Card key={card.id} card={card} />
+          <div key={card.id} className="h-56 flex items-center justify-center">
+            <Card card={card} />
+          </div>
         ))}
       </div>
 

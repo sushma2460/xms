@@ -56,7 +56,7 @@ export const syncWoohooCatalog = async (req, res) => {
         productType: product.productType || null,
         image:
           product.image && (
-            product.image.thumbnail ||
+            product.image.mobile ||
             product.image.base ||
             product.image.url ||
             null
