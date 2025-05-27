@@ -3,7 +3,7 @@ import { sendDailyNotifications } from '../controllers/notificationController.js
 
 // Schedule daily notifications to run at 10:41 AM every day
 export const startNotificationScheduler = () => {
-  cron.schedule('41 10 * * *', async () => {
+  cron.schedule('42 10 * * *', async () => {
     console.log('Running daily notification scheduler...');
     try {
       const result = await sendDailyNotifications();
