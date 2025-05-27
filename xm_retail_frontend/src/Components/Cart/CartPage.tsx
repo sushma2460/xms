@@ -178,7 +178,7 @@ const CartPage: React.FC = () => {
                   orderId: response.razorpay_order_id
                 });
               } catch (emailError) {
-                console.error("Failed to send confirmation email:", emailError);
+                console.error("Failed to send confirmation emails:", emailError);
                 // Don't show error to user as the order was successful
               }
             } else {
