@@ -18,7 +18,9 @@ import Order from "./models/orderModel.js";
 import OrderdetailsRoutes from "./routes/OrderdetailsRoutes.js"; // Ensure the file extension is included
 import searchRoutes from "./routes/search.js"; // Ensure the file extension is included
 import ProductList from "./models/ProductListModel.js"; // Import ProductList model
-
+import emailRoutes from "./routes/emailRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import { startNotificationScheduler } from "./schedulers/notificationScheduler.js";
 
 const app = express();
 const PORT = 4000;
@@ -93,8 +95,13 @@ app.use("/cust/data",cust);
 //customer Order details
 app.use("/api/order",OrderdetailsRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/email", emailRoutes);
 
+//notification routes
+app.use("/api/notifications", notificationRoutes);
 
+// Start the notification scheduler
+startNotificationScheduler();
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

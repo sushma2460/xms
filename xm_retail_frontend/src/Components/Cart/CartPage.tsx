@@ -167,6 +167,20 @@ const CartPage: React.FC = () => {
               setShowSuccessModal(true);
               localStorage.removeItem("cart");
               setCart([]);
+
+              // Send email to user with order details
+              try {
+                await axios.post("http://localhost:4000/api/email/send-order-confirmation", {
+                  email: storedUser.email,
+                  name: storedUser.name,
+                  orders: successfulOrders,
+                  totalAmount: totalAmount,
+                  orderId: response.razorpay_order_id
+                });
+              } catch (emailError) {
+                console.error("Failed to send confirmation email:", emailError);
+                // Don't show error to user as the order was successful
+              }
             } else {
               alert("Payment verification failed.");
             }

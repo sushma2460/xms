@@ -50,6 +50,7 @@ interface OrderCard {
   recipientEmail: string;
   recipientPhone: string;
   balance: number | null;
+  status?: string;
 }
 
 const ProductDetails: React.FC = () => {
@@ -244,6 +245,28 @@ const ProductDetails: React.FC = () => {
               }
               setOrderData(cards[0]);
               setShowSuccessModal(true);
+
+              // Send email to user with order details
+              try {
+                await axios.post("http://localhost:4000/api/email/send-order-confirmation", {
+                  email: storedUser.email,
+                  name: storedUser.name,
+                  orders: [{
+                    sku: product?.sku,
+                    amount: selectedDenomination,
+                    cardNumber: cards[0].cardNumber,
+                    cardPin: cards[0].cardPin,
+                    validity: cards[0].validity,
+                    issuanceDate: cards[0].issuanceDate,
+                    status: "Success"
+                  }],
+                  totalAmount: selectedDenomination,
+                  orderId: response.razorpay_order_id
+                });
+              } catch (emailError) {
+                console.error("Failed to send confirmation email:", emailError);
+                // Don't show error to user as the order was successful
+              }
             } else {
               alert("Payment verification failed.");
             }
@@ -377,7 +400,6 @@ const ProductDetails: React.FC = () => {
                         src={
                           rp.images?.thumbnail ||
                           rp.images?.base ||
-                          rp.image || // <-- use the image field from DB
                           "/placeholder-image.jpg"
                         }
                         alt={rp.name}

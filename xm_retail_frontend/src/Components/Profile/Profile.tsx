@@ -78,7 +78,12 @@ export default function Profile() {
           },
         });
         setCards(response.data);
+        localStorage.setItem("cards", JSON.stringify(response.data)); // cache
       } catch (error) {
+        // On error, try to load from cache
+        const cached = localStorage.getItem("cards");
+        if (cached) setCards(JSON.parse(cached));
+        else setCards([]);
         console.error("Error fetching gift cards:", error);
       }
     };
@@ -101,8 +106,12 @@ export default function Profile() {
           }
         );
         setOrderCount(response.data.count);
+        localStorage.setItem("orderCount", response.data.count); // cache
       } catch (error) {
-        setOrderCount(0);
+        // On error, try to load from cache
+        const cached = localStorage.getItem("orderCount");
+        if (cached) setOrderCount(Number(cached));
+        else setOrderCount(0);
       }
     };
     if (storedUser.email) fetchOrderCount();
