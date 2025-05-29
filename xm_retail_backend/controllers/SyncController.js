@@ -7,7 +7,7 @@ import ProductList from "../models/ProductListModel.js";
 import ProductDetails from '../models/WoohooproductDetailsModel.js';
 import RelatedProduct from "../models/RelatedProductsModel.js";
 import CatalogProduct from "../models/CatalogModel.js";
-
+import { getActiveToken } from '../services/woohooTokenService.js';
 
 dotenv.config();
 
@@ -16,6 +16,12 @@ const woohooCategoryUrl = 'https://sandbox.woohoo.in/rest/v3/catalog/categories'
 // Block 1: Sync categories from Woohoo API to DB (call this periodically or via admin endpoint)
 export const syncWoohooCategories = async (req, res) => {
     try {
+        // Get active token from database
+        const token = await getActiveToken();
+        if (!token || !token.accessToken) {
+            throw new Error('No active token found');
+        }
+
         const method = 'GET';
         const { signature, dateAtClient } = generateWoohooSignature(
             woohooCategoryUrl,
@@ -25,7 +31,7 @@ export const syncWoohooCategories = async (req, res) => {
 
         const response = await axios.get(woohooCategoryUrl, {
             headers: {
-                Authorization: `Bearer ${process.env.bearerToken}`,
+                Authorization: `Bearer ${token.accessToken}`,
                 signature,
                 dateAtClient,
                 'Content-Type': 'application/json',
@@ -76,7 +82,8 @@ export const syncWoohooCategories = async (req, res) => {
         console.error(`Woohoo Categories API error: ${error.message}`);
         res.status(500).json({
             error: 'Failed to sync categories from Woohoo API',
-            details: error.message
+            details: error.message,
+            tokenError: error.message.includes('token') ? 'Token related error' : null
         });
     }
 };
@@ -90,6 +97,12 @@ const woohooCategoryProducts = (categoryId) =>
 // Controller: Sync products for all categories
 export const syncProductsForAllCategories = async (req, res) => {
   try {
+    // Get active token from database
+    const token = await getActiveToken();
+    if (!token || !token.accessToken) {
+      throw new Error('No active token found');
+    }
+
     const categories = await WoohooCategory.findAll();
     let updated = false;
 
@@ -103,7 +116,7 @@ export const syncProductsForAllCategories = async (req, res) => {
 
       const response = await axios.get(woohooCategoryProducts(category.id), {
         headers: {
-          Authorization: `Bearer ${process.env.bearerToken}`,
+          Authorization: `Bearer ${token.accessToken}`,
           signature,
           dateAtClient,
           "Content-Type": "application/json",
@@ -173,10 +186,22 @@ export const syncProductsForAllCategories = async (req, res) => {
       }
       console.log("Syncing products for category:", category.id, category.name);
     }
-    res.json({ message: updated ? "Products updated" : "No changes detected" });
+    res.json({ 
+      success: true,
+      message: updated ? "Products updated" : "No changes detected",
+      tokenUsed: {
+        tokenType: token.tokenType,
+        expiresAt: token.expiresAt
+      }
+    });
   } catch (error) {
     console.error("Failed to sync products:", error);
-    res.status(500).json({ error: "Failed to sync products", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to sync products", 
+      details: error.message,
+      tokenError: error.message.includes('token') ? 'Token related error' : null
+    });
   }
 };
 
@@ -193,61 +218,83 @@ export const syncProductDetails = async (req, res) => {
   console.log("Received body:", req.body);
   const { skus } = req.body;
   if (!Array.isArray(skus) || skus.length === 0) {
-    // 400 error
+    return res.status(400).json({ error: "Invalid SKUs array" });
   }
 
-  let results = [];
-  for (const productSku of skus) {
-    try {
-      // Fetch from Woohoo API
-      const productUrl = `https://sandbox.woohoo.in/rest/v3/catalog/products/${productSku}`;
-      const method = 'GET';
-      const { signature, dateAtClient } = generateWoohooSignature(
-        productUrl,
-        method,
-        process.env.clientSecret
-      );
-      const response = await axios.get(productUrl, {
-        headers: {
-          Authorization: `Bearer ${process.env.bearerToken}`,
-          signature,
-          dateAtClient,
-          'Content-Type': 'application/json',
-          Accept: '*/*',
-        },
-      });
-      const apiProduct = response.data;
-
-      // Fetch from DB
-      let dbProduct = await ProductDetails.findOne({ where: { sku: productSku } });
-
-      // Compare and upsert if needed
-      let needsUpdate = false;
-      if (!dbProduct) {
-        needsUpdate = true;
-      } else {
-        const dbData = dbProduct.toJSON();
-        delete dbData.createdAt;
-        delete dbData.updatedAt;
-        needsUpdate = JSON.stringify(dbData) !== JSON.stringify(apiProduct);
-      }
-
-      if (needsUpdate) {
-        await ProductDetails.upsert({
-          ...apiProduct,
-          id: apiProduct.sku,
-          createdAtWoohoo: apiProduct.createdAt,
-          updatedAtWoohoo: apiProduct.updatedAt,
-        });
-        results.push({ sku: productSku, status: "synced/updated" });
-      } else {
-        results.push({ sku: productSku, status: "no change" });
-      }
-    } catch (error) {
-      results.push({ sku: productSku, status: "error", message: error.message });
+  try {
+    // Get active token from database
+    const token = await getActiveToken();
+    if (!token || !token.accessToken) {
+      throw new Error('No active token found');
     }
+
+    let results = [];
+    for (const productSku of skus) {
+      try {
+        // Fetch from Woohoo API
+        const productUrl = `https://sandbox.woohoo.in/rest/v3/catalog/products/${productSku}`;
+        const method = 'GET';
+        const { signature, dateAtClient } = generateWoohooSignature(
+          productUrl,
+          method,
+          process.env.clientSecret
+        );
+        const response = await axios.get(productUrl, {
+          headers: {
+            Authorization: `Bearer ${token.accessToken}`,
+            signature,
+            dateAtClient,
+            'Content-Type': 'application/json',
+            Accept: '*/*',
+          },
+        });
+        const apiProduct = response.data;
+
+        // Fetch from DB
+        let dbProduct = await ProductDetails.findOne({ where: { sku: productSku } });
+
+        // Compare and upsert if needed
+        let needsUpdate = false;
+        if (!dbProduct) {
+          needsUpdate = true;
+        } else {
+          const dbData = dbProduct.toJSON();
+          delete dbData.createdAt;
+          delete dbData.updatedAt;
+          needsUpdate = JSON.stringify(dbData) !== JSON.stringify(apiProduct);
+        }
+
+        if (needsUpdate) {
+          await ProductDetails.upsert({
+            ...apiProduct,
+            id: apiProduct.sku,
+            createdAtWoohoo: apiProduct.createdAt,
+            updatedAtWoohoo: apiProduct.updatedAt,
+          });
+          results.push({ sku: productSku, status: "synced/updated" });
+        } else {
+          results.push({ sku: productSku, status: "no change" });
+        }
+      } catch (error) {
+        results.push({ sku: productSku, status: "error", message: error.message });
+      }
+    }
+    res.json({ 
+      success: true,
+      results,
+      tokenUsed: {
+        tokenType: token.tokenType,
+        expiresAt: token.expiresAt
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to sync product details", 
+      details: error.message,
+      tokenError: error.message.includes('token') ? 'Token related error' : null
+    });
   }
-  res.json({ results });
 };
 
 export const getAllProductSkus = async (req, res) => {
@@ -271,13 +318,18 @@ const woohooRelatedProductsURL = (productSku) =>
 
 export const syncAllRelatedProducts = async (req, res) => {
   try {
+    // Get active token from database
+    const token = await getActiveToken();
+    if (!token || !token.accessToken) {
+      throw new Error('No active token found');
+    }
+
     console.log("Starting syncAllRelatedProducts...");
     const products = await ProductList.findAll({ attributes: ['sku'] });
     let results = [];
     for (const product of products) {
       const productSku = product.sku;
       try {
-        // Reuse your existing logic for each SKU
         const method = "GET";
         const { signature, dateAtClient } = generateWoohooSignature(
           woohooRelatedProductsURL(productSku),
@@ -287,7 +339,7 @@ export const syncAllRelatedProducts = async (req, res) => {
 
         const response = await axios.get(woohooRelatedProductsURL(productSku), {
           headers: {
-            Authorization: `Bearer ${process.env.bearerToken}`,
+            Authorization: `Bearer ${token.accessToken}`,
             signature,
             dateAtClient,
             "Content-Type": "application/json",
@@ -343,8 +395,20 @@ export const syncAllRelatedProducts = async (req, res) => {
         results.push({ sku: productSku, status: "api error", error: error.message });
       }
     }
-    res.json({ results });
+    res.json({ 
+      success: true,
+      results,
+      tokenUsed: {
+        tokenType: token.tokenType,
+        expiresAt: token.expiresAt
+      }
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to sync all related products", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to sync all related products", 
+      details: error.message,
+      tokenError: error.message.includes('token') ? 'Token related error' : null
+    });
   }
 };

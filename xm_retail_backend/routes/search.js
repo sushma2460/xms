@@ -51,7 +51,7 @@ router.get("/", async (req, res) => {
         name: item.name,
         image: item.image,
         cashback: item.cashback,
-        type: "card",
+        type: "cards",
       })),
       ...productResults.map((item) => ({
         id: item.id,

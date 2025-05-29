@@ -36,7 +36,7 @@ export const sendOrderConfirmation = async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Order Confirmation - Woohoo Cart',
+      subject: 'Order Confirmation - Xm Retail',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #F37254;">Order Confirmation</h2>

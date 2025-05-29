@@ -1,5 +1,5 @@
 import express from 'express';
-import { sendOrderConfirmation } from '../controllers/emailController.js';
+import { sendOrderConfirmation } from '../controllers/emailOrderConfirmController.js';
 
 const router = express.Router();
 

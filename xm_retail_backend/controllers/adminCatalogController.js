@@ -2,18 +2,24 @@ import axios from 'axios';
 import { generateWoohooSignature } from '../generateSignature.js';
 import CatalogProduct from '../models/CatalogModel.js';
 import { Op } from "sequelize";
+import { getActiveToken } from '../services/woohooTokenService.js';
 
 const woohoocatalog = 'https://sandbox.woohoo.in/rest/v3/catalog/products';
 
 // Add these counters at the top of your file (outside the functions)
 let apiSyncCount = 0;
 
-
 // Sync catalog from Woohoo API, but only update DB if new/changed
 export const syncWoohooCatalog = async (req, res) => {
   apiSyncCount++;
   console.log(`[Woohoo API SYNC] Called ${apiSyncCount} times`);
   try {
+    // Get active token from database
+    const token = await getActiveToken();
+    if (!token || !token.accessToken) {
+      throw new Error('No active token found');
+    }
+
     const method = 'GET';
     const { signature, dateAtClient } = generateWoohooSignature(
       woohoocatalog,
@@ -23,7 +29,7 @@ export const syncWoohooCatalog = async (req, res) => {
 
     const response = await axios.get(woohoocatalog, {
       headers: {
-        Authorization: `Bearer ${process.env.bearerToken}`,
+        Authorization: `Bearer ${token.accessToken}`,
         signature,
         dateAtClient,
         'Content-Type': 'application/json',
@@ -94,10 +100,22 @@ export const syncWoohooCatalog = async (req, res) => {
       }
     });
 
-    res.json({ message: `Catalog sync complete. ${updatedCount} products added/updated.` });
+    res.json({ 
+      success: true,
+      message: `Catalog sync complete. ${updatedCount} products added/updated.`,
+      tokenUsed: {
+        tokenType: token.tokenType,
+        expiresAt: token.expiresAt
+      }
+    });
   } catch (error) {
     console.error("Woohoo API error:", error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Catalog sync failed', details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: 'Catalog sync failed', 
+      details: error.message,
+      tokenError: error.message.includes('token') ? 'Token related error' : null
+    });
   }
 };
 

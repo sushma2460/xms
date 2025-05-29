@@ -1,6 +1,7 @@
 import { generateWoohooSignature } from "../generateSignature.js";
 import axios from "axios";
 import dotenv from "dotenv";
+import { getActiveToken } from '../services/woohooTokenService.js';
 
 dotenv.config();
 
@@ -8,6 +9,12 @@ const woohooProductDetails = (orderId) => `https://sandbox.woohoo.in/rest/v3/ord
 
 export const getOrderDetails = async (req, res) => {
   try {
+    // Get active token from database
+    const token = await getActiveToken();
+    if (!token || !token.accessToken) {
+      throw new Error('No active token found');
+    }
+
     const { orderid } = req.params;
 
     if (!orderid) {
@@ -27,7 +34,7 @@ export const getOrderDetails = async (req, res) => {
 
     const response = await axios.get(woohooProductDetails(orderid), {
       headers: {
-        Authorization: `Bearer ${process.env.bearerToken}`, // ✅ Fixed typo
+        Authorization: `Bearer ${token.accessToken}`,
         signature,
         dateAtClient,
         'Content-Type': 'application/json',
@@ -49,10 +56,23 @@ export const getOrderDetails = async (req, res) => {
       success: true,
       orderId: result.orderId,
       data: result,
+      tokenUsed: {
+        tokenType: token.tokenType,
+        expiresAt: token.expiresAt
+      }
     });
 
   } catch (error) {
-    console.error(`Woohoo API error: ${error.message}`); // ✅ Fixed typo
+    console.error(`Woohoo API error: ${error.message}`);
+
+    if (error.message.includes('token')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Token Error',
+        details: error.message,
+        tokenError: true
+      });
+    }
 
     if (error.response) {
       // Server responded with a status outside of 2xx

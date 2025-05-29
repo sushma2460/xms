@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FaUserCircle } from "react-icons/fa";
+import { FaUserCircle, FaMapMarkerAlt } from "react-icons/fa";
 import { ShoppingCart } from "lucide-react";
 import axios from "axios";
 import Logo from "./assets/Group_1.png";
+import { useLocationPermission } from "../LocationPermission/useLocationPermission";
+import LocationModal from "../LocationPermission/LocationModal";
 
 interface SearchResult {
   id: number;
@@ -21,6 +23,21 @@ const Nav: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("user"));
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [cartCount, setCartCount] = useState(0);
+  const { locationState, requestLocation } = useLocationPermission();
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ 
+    name: string; 
+    city?: string | null; 
+    postcode?: string | null; 
+    latitude?: number | null; 
+    longitude?: number | null; 
+  } | null>(locationState.locationName ? { 
+    name: locationState.locationName, 
+    city: locationState.city, 
+    postcode: locationState.postcode, 
+    latitude: locationState.latitude, 
+    longitude: locationState.longitude 
+  } : null);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -66,11 +83,46 @@ const Nav: React.FC = () => {
     };
     updateCartCount();
     window.addEventListener("storage", updateCartCount);
-    window.addEventListener("cartUpdated", updateCartCount); // <-- add this
+    window.addEventListener("cartUpdated", updateCartCount);
     return () => {
       window.removeEventListener("storage", updateCartCount);
-      window.removeEventListener("cartUpdated", updateCartCount); // <-- add this
+      window.removeEventListener("cartUpdated", updateCartCount);
     };
+  }, []);
+
+  useEffect(() => {
+    if (locationState.permission === 'granted' && locationState.locationName) {
+       const name = locationState.locationName || '';
+       const newSelectedLocation = {
+           name: name,
+           city: locationState.city,
+           postcode: locationState.postcode,
+           latitude: locationState.latitude,
+           longitude: locationState.longitude,
+       };
+       setSelectedLocation(newSelectedLocation);
+    } else if (locationState.permission === 'denied' && (locationState.city || locationState.postcode || locationState.locationName)) {
+           const newSelectedLocation = {
+               name: locationState.locationName || "Mumbai",
+               city: locationState.city,
+               postcode: locationState.postcode,
+               latitude: locationState.latitude,
+               longitude: locationState.longitude,
+           };
+           setSelectedLocation(newSelectedLocation);
+    }
+  }, [locationState.permission, locationState.locationName, locationState.city, locationState.postcode, locationState.latitude, locationState.longitude]);
+
+  useEffect(() => {
+    const savedLocation = localStorage.getItem('selectedLocation');
+    if (savedLocation) {
+      try {
+        const locationData = JSON.parse(savedLocation);
+        setSelectedLocation(locationData);
+      } catch (error) {
+        console.error('Error parsing saved location:', error);
+      }
+    }
   }, []);
 
   const handleResultClick = (result: SearchResult) => {
@@ -112,13 +164,31 @@ const Nav: React.FC = () => {
     }
   };
 
+  const handleLocationSelect = useCallback((location: { 
+    name: string; 
+    city?: string | null; 
+    postcode?: string | null; 
+    latitude?: number | null; 
+    longitude?: number | null; 
+  }) => {
+    const locationData = {
+      name: location.name,
+      city: location.city,
+      postcode: location.postcode,
+      latitude: location.latitude,
+      longitude: location.longitude
+    };
+    setSelectedLocation(locationData);
+    localStorage.setItem('selectedLocation', JSON.stringify(locationData));
+  }, [setSelectedLocation]);
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 bg-[#F8F9FA] border-b border-[#E0E0E0] dark:bg-[#1A202C] w-full z-20 shadow-md">
-        <div className="max-w-screen-xl mx-auto flex items-center justify-between px-3 py-2 sm:py-3">
+        <div className="max-w-screen-xl mx-auto flex items-center justify-between px-2 sm:px-3 py-2 sm:py-3">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 min-w-[80px] sm:min-w-[100px]">
             <img
               src={Logo}
               className="h-6 w-16 sm:h-8 sm:w-20 md:h-10 md:w-24 transition-all duration-300"
@@ -130,17 +200,17 @@ const Nav: React.FC = () => {
           </Link>
 
           {/* Search Bar */}
-          <div className="relative flex-1 mx-2 sm:mx-4 md:mx-6 lg:mx-8">
+          <div className="relative flex-1 mx-1 sm:mx-4 md:mx-6 lg:mx-8 min-w-[120px]">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
               onKeyDown={handleKeyDown}
-              className="block w-full p-2.5 pl-10 text-sm sm:text-base text-gray-900 border border-gray-300 rounded-full bg-gray-50 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
-              placeholder="Search products, cards, or categories..."
+              className="block w-full p-2 sm:p-2.5 pl-8 sm:pl-10 text-sm sm:text-base text-gray-900 border border-gray-300 rounded-full bg-gray-50 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+              placeholder="Search..."
             />
-            <div className="absolute inset-y-0 left-2 flex items-center text-gray-500">
+            <div className="absolute inset-y-0 left-2 sm:left-2.5 flex items-center text-gray-500">
               🔍
             </div>
 
@@ -157,11 +227,14 @@ const Nav: React.FC = () => {
                       onMouseDown={() => handleResultClick(result)}
                     >
                       <div className="flex items-center gap-2">
-                        {result.image && (
+                        {result.image && result.image !== "" && (
                           <img
                             src={`${apiUrl}/uploads/${result.image}`}
                             alt={result.name}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                         )}
                         <span className="font-medium text-sm sm:text-base">
@@ -184,26 +257,44 @@ const Nav: React.FC = () => {
             )}
           </div>
 
+          {/* Location Display */}
+          <div
+            className="flex items-center mx-2 sm:mx-4 cursor-pointer min-w-[60px] sm:min-w-[80px]"
+            onClick={() => {
+              setIsLocationModalOpen(true);
+            }}
+          >
+            <div className="flex items-center space-x-1 sm:space-x-2 text-[#ff6726]">
+              <FaMapMarkerAlt className="text-[#ff6726] text-sm sm:text-base" />
+              <span className="text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">
+                {selectedLocation ? 
+                  `${selectedLocation.city || ''}${selectedLocation.city && selectedLocation.postcode ? ', ' : ''} 
+                  ${selectedLocation.postcode || ''}` 
+                : `${locationState.city || ''}${locationState.city && locationState.postcode ? ', ' : ''}${locationState.postcode || ''}`}
+              </span>
+            </div>
+          </div>
+
           {/* Login/Signup Button */}
-          { !isLoggedIn && location.pathname === "/" && (
-            <Link to="/login">
-              <button className="text-white bg-[#ff6726] hover:bg-[#FFB74D] rounded-md text-xs sm:text-sm px-3 py-2 sm:px-4 sm:py-3 font-semibold">
+          {!isLoggedIn && location.pathname === "/" && (
+            <Link to="/login" className="min-w-[80px] sm:min-w-[100px]">
+              <button className="text-white bg-[#ff6726] hover:bg-[#FFB74D] rounded-md text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 font-semibold w-full">
                 Login/Sign up
               </button>
             </Link>
           )} 
-             {isLoggedIn && (
-            <div className="flex items-center gap-4">
+          {isLoggedIn && (
+            <div className="flex items-center gap-2 sm:gap-4 min-w-[80px] sm:min-w-[100px] justify-end">
               <Link to="/cart" className="relative">
-                <ShoppingCart size={24} color="#ff6726" />
+                <ShoppingCart size={22} className="sm:w-6 sm:h-6" color="#ff6726" />
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-white text-[#ff6726] text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center border border-[#ff6726] shadow">
                     {cartCount}
                   </span>
                 )}
               </Link>
-              <Link to="/profile" className="ml-2">
-                <FaUserCircle className="text-2xl text-[#ff6726] cursor-pointer" />
+              <Link to="/profile" className="ml-1 sm:ml-2">
+                <FaUserCircle className="text-xl sm:text-2xl text-[#ff6726] cursor-pointer" />
               </Link>
             </div>
           )}
@@ -213,6 +304,13 @@ const Nav: React.FC = () => {
       <div className="main-content" style={{ paddingTop: "60px" }}>
         {/* Other content */}
       </div>
+
+      {/* Location Modal */}
+      <LocationModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        onSelectLocation={handleLocationSelect}
+      />
     </>
   );
 }

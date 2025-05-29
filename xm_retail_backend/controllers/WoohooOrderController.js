@@ -6,12 +6,45 @@ import dotenv from "dotenv";
 import WoohooOrder from "../models/cardorders.js";
 import { sequelize } from "../config/db.js";
 import crypto from "crypto";
+import { getActiveToken } from '../services/woohooTokenService.js';
 
 dotenv.config();
 
 const woohooOrderUrl = `https://sandbox.woohoo.in/rest/v3/orders`;
 const ENCRYPTION_KEY = process.env.CARD_ENCRYPTION_KEY; // Must be 32 bytes (hex or utf8)
 const IV_LENGTH = 16; // For AES, this is always 16
+
+// Function to generate incrementing reference number
+async function generateReferenceNumber() {
+  try {
+    // Find the last order to get the last reference number
+    const lastOrder = await WoohooOrder.findOne({
+      order: [['createdAt', 'DESC']],
+      attributes: ['refno']
+    });
+
+    let nextNumber = 1; // Default starting number
+
+    if (lastOrder && lastOrder.refno) {
+      // Extract the number part from the last reference number
+      const lastNumber = parseInt(lastOrder.refno.replace('XMR', ''));
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+
+    // Get current timestamp in milliseconds
+    const timestamp = Date.now();
+    
+    // Format the number with leading zeros and add timestamp
+    // Format: XMR000001-1234567890
+    return `XMR${nextNumber.toString().padStart(6, '0')}-${timestamp}`;
+  } catch (error) {
+    console.error('Error generating reference number:', error);
+    // Fallback to timestamp-based reference if there's an error
+    return `XMR-${Date.now()}`;
+  }
+}
 
 function encrypt(text) {
   const iv = crypto.randomBytes(IV_LENGTH);
@@ -34,6 +67,12 @@ function decrypt(text) {
 
 export const placeOrder = async (req, res) => {
   try {
+    // Get active token from database
+    const token = await getActiveToken();
+    if (!token || !token.accessToken) {
+      throw new Error('No active token found');
+    }
+
     const { sku, price, razorpay_order_id, name, email, phone, quantity } = req.body;
 
     // Validate user info
@@ -82,7 +121,8 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    const refno = `${razorpay_order_id}-${sku}-${Date.now()}`;
+    // Generate reference number
+    const refno = await generateReferenceNumber();
 
     const payload = {
       address: {
@@ -102,7 +142,7 @@ export const placeOrder = async (req, res) => {
         {
           code: "svc",
           amount: parsedPrice * parsedQuantity,
-          poNumber: `PO-${Date.now()}`,
+          poNumber: refno, // Use the same reference number for PO
         },
       ],
       products: [
@@ -129,7 +169,7 @@ export const placeOrder = async (req, res) => {
 
     const response = await axios.post(woohooOrderUrl, payload, {
       headers: {
-        Authorization: `Bearer ${process.env.bearerToken}`,
+        Authorization: `Bearer ${token.accessToken}`,
         Signature: generatedSignature,
         DateAtClient: dateAtClient,
         "Content-Type": "application/json",
@@ -167,6 +207,10 @@ export const placeOrder = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: placed,
+      tokenUsed: {
+        tokenType: token.tokenType,
+        expiresAt: token.expiresAt
+      }
     });
   } catch (error) {
     console.error("Error placing Woohoo order:", error.message, error.response?.data);
@@ -174,6 +218,7 @@ export const placeOrder = async (req, res) => {
       success: false,
       error: "Internal server error",
       details: error.message || "Unknown error occurred",
+      tokenError: error.message.includes('token') ? 'Token related error' : null
     });
   }
 };

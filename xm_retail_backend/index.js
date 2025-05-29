@@ -13,6 +13,7 @@ import path from "path";
 import userRoutes from "./routes/userRoutes.js";
 import payment from "./routes/payment.js"
 import woohooRoutes from "./routes/woohooRoutes.js";
+import woohooTokenRoutes from "./routes/woohooTokenRoutes.js";
 import orderRoutes from "./routes/orderroutes.js"; // Ensure the file extension is included
 import Order from "./models/orderModel.js";
 import OrderdetailsRoutes from "./routes/OrderdetailsRoutes.js"; // Ensure the file extension is included
@@ -21,6 +22,7 @@ import ProductList from "./models/ProductListModel.js"; // Import ProductList mo
 import emailRoutes from "./routes/emailRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { startNotificationScheduler } from "./schedulers/notificationScheduler.js";
+import { startTokenScheduler } from "./schedulers/tokenScheduler.js";
 
 const app = express();
 const PORT = 4000;
@@ -83,7 +85,8 @@ app.use(errorHandler);
 
 
 //Woohoo fetching
-app.use("/api/woohoo",woohooRoutes);
+app.use("/api/woohoo", woohooRoutes);
+app.use("/api/woohoo/token", woohooTokenRoutes);
 
  
 
@@ -100,8 +103,11 @@ app.use("/api/email", emailRoutes);
 //notification routes
 app.use("/api/notifications", notificationRoutes);
 
-// Start the notification scheduler
+// Start the schedulers
 startNotificationScheduler();
+startTokenScheduler().catch(error => {
+  console.error('Failed to start token scheduler:', error);
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

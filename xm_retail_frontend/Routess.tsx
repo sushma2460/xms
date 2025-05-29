@@ -11,6 +11,7 @@ import AdminProtectedRoute from "./src/Components/AdminProtectedRoute";
 import DashBoard from "./src/Components/Admin/DashBoard";
 import ProductDetails from "./src/Components/Cards/productdetails";
 import CartPage from "./src/Components/Cart/CartPage";
+import LocationSelectPage from './src/Components/LocationPermission/LocationSelectPage'
 
 function Routess() {
   return (
@@ -36,6 +37,8 @@ function Routess() {
         <Route path="/products/:categoryId" element={<ProductList />} />
         <Route path="/product/:productSku" element={<ProductDetails />} />
         <Route path="/cart" element={<CartPage/>} />
+         <Route path="/location-select" element={<LocationSelectPage />} /> 
+
         {/* Add other routes here */}
       </Routes>
     </Router>
