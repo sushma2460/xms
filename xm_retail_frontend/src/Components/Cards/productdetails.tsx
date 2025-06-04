@@ -63,6 +63,13 @@ const ProductDetails: React.FC = () => {
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
   const [orderData, setOrderData] = useState<OrderCard | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const navigate = useNavigate();
@@ -87,7 +94,6 @@ const ProductDetails: React.FC = () => {
           }
         }
       } catch (err) {
-        console.error("Error fetching product:", err);
         setError("Failed to load product details. Please try again later.");
       } finally {
         setLoading(false);
@@ -107,13 +113,220 @@ const ProductDetails: React.FC = () => {
           setRelatedProducts(response.data || []);
         }
       } catch (error) {
-        console.error("Error fetching related products:", error);
         setRelatedProducts([]);
       }
     };
 
     fetchRelatedProducts();
   }, [productSku]);
+
+  // Update the useEffect for network status monitoring
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setIsReconnecting(true);
+      
+      // Don't hide network modal immediately, let it show the reconnection state
+      // It will be hidden when success modal appears
+      
+      // Try to recover any pending orders
+      const pendingOrderRefno = localStorage.getItem('pendingOrderRefno');
+      if (pendingOrderRefno) {
+        recoverOrder(pendingOrderRefno);
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setIsReconnecting(false);
+      setShowNetworkModal(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Show network modal if initially offline
+    if (!navigator.onLine) {
+      setShowNetworkModal(true);
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Update the recoverOrder function to handle the modal transition
+  const recoverOrder = async (refno: string) => {
+    try {
+      setIsRecovering(true);
+      setRecoveryError(null);
+
+      // First try to force update the order
+      try {
+        await axios.post(`http://localhost:4000/api/order/force-update/${refno}`);
+      } catch (updateError) {
+        // Handle error silently
+      }
+
+      // Then check order status
+      const statusResponse = await axios.get(`http://localhost:4000/api/order/status/${refno}`);
+      if (!statusResponse.data.success) {
+        throw new Error(statusResponse.data.details || 'Failed to check order status');
+      }
+
+      const statusData = statusResponse.data.data;
+
+      // If order is completed, fetch card details
+      if (statusData.status === 'COMPLETE' || statusData.localStatus === 'completed') {
+      const detailsResponse = await axios.get(`http://localhost:4000/api/order/details/${refno}`);
+        if (!detailsResponse.data.success) {
+          throw new Error(detailsResponse.data.details || 'Failed to fetch order details');
+        }
+
+        const orderData = detailsResponse.data.data;
+        
+        // Only show card details if they exist
+        if (orderData.cardNumber && orderData.cardPin) {
+          setOrderData({
+            sku: orderData.sku,
+            productName: orderData.productName,
+            amount: orderData.amount,
+            cardNumber: orderData.cardNumber,
+            cardPin: orderData.cardPin,
+            validity: orderData.validity,
+            issuanceDate: orderData.issuanceDate,
+            recipientName: orderData.recipientName || storedUser.name,
+            recipientEmail: orderData.recipientEmail || storedUser.email,
+            recipientPhone: orderData.recipientPhone || storedUser.phone,
+            balance: orderData.balance,
+            status: 'completed'
+          });
+          // Hide network modal and show success modal
+          setShowNetworkModal(false);
+          setShowSuccessModal(true);
+          localStorage.removeItem('pendingOrderRefno');
+          setIsRecovering(false);
+          setRecoveryError(null);
+
+          await sendEmailConfirmation(orderData);
+        } else {
+          // If order is complete but no card details, start polling
+          startPolling(refno);
+        }
+      } else if (statusData.status === 'CANCELED') {
+        setRecoveryError('Order was canceled. Please try again.');
+        localStorage.removeItem('pendingOrderRefno');
+        setIsRecovering(false);
+        setShowNetworkModal(false);
+      } else {
+        // If still pending/processing, start polling
+        startPolling(refno);
+      }
+    } catch (error) {
+      setRecoveryError('Failed to recover order. Please contact support.');
+      setIsRecovering(false);
+      setShowNetworkModal(false);
+    }
+  };
+
+  // Function to start polling for order status
+  const startPolling = (refno: string) => {
+    const pollInterval = setInterval(async () => {
+      try {
+      const statusResponse = await axios.get(`http://localhost:4000/api/order/status/${refno}`);
+        if (!statusResponse.data.success) {
+          throw new Error(statusResponse.data.details || 'Failed to check order status');
+        }
+
+        const statusData = statusResponse.data.data;
+
+        if (statusData.status === 'COMPLETE' || statusData.localStatus === 'completed') {
+          clearInterval(pollInterval);
+          
+          // Get order details from the status response if available
+          if (statusData.cards && statusData.cards.length > 0) {
+            const cardData = statusData.cards[0];
+            setOrderData({
+              sku: cardData.sku,
+              productName: cardData.productName,
+              amount: cardData.amount,
+              cardNumber: cardData.cardNumber,
+              cardPin: cardData.cardPin,
+              validity: cardData.validity,
+              issuanceDate: cardData.issuanceDate,
+              recipientName: storedUser.name,
+              recipientEmail: storedUser.email,
+              recipientPhone: storedUser.phone,
+              balance: cardData.balance,
+              status: 'completed'
+            });
+            setShowSuccessModal(true);
+          localStorage.removeItem('pendingOrderRefno');
+            setIsRecovering(false);
+            setRecoveryError(null);
+
+            await sendEmailConfirmation(cardData);
+          } else {
+            // If no card details in status response, try to get order details
+            try {
+              const detailsResponse = await axios.get(`http://localhost:4000/api/order/details/${refno}`);
+              if (detailsResponse.data.success && detailsResponse.data.data) {
+                const orderData = detailsResponse.data.data;
+                if (orderData.cardNumber && orderData.cardPin) {
+                  setOrderData({
+                    sku: orderData.sku,
+                    productName: orderData.productName,
+                    amount: orderData.amount,
+                    cardNumber: orderData.cardNumber,
+                    cardPin: orderData.cardPin,
+                    validity: orderData.validity,
+                    issuanceDate: orderData.issuanceDate,
+                    recipientName: orderData.recipientName || storedUser.name,
+                    recipientEmail: orderData.recipientEmail || storedUser.email,
+                    recipientPhone: orderData.recipientPhone || storedUser.phone,
+                    balance: orderData.balance,
+                    status: 'completed'
+                  });
+                  setShowSuccessModal(true);
+          localStorage.removeItem('pendingOrderRefno');
+                  setIsRecovering(false);
+                  setRecoveryError(null);
+
+                  await sendEmailConfirmation(orderData);
+                }
+              }
+            } catch (detailsError) {
+              // Handle error silently
+            }
+          }
+        } else if (statusData.status === 'CANCELED') {
+          clearInterval(pollInterval);
+          setRecoveryError('Order was canceled. Please try again.');
+          localStorage.removeItem('pendingOrderRefno');
+          setIsRecovering(false);
+        } else {
+          // Show processing status
+          setOrderData(prev => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              status: statusData.status.toLowerCase()
+            };
+          });
+        }
+      } catch (error: any) {
+        // Don't clear interval on network errors, keep trying
+        if (error.response && error.response.status !== 404) {
+          clearInterval(pollInterval);
+          setRecoveryError('Failed to check order status. Please contact support.');
+          setIsRecovering(false);
+        }
+      }
+    }, 5000); // Poll every 5 seconds
+
+    
+  };
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -182,7 +395,8 @@ const ProductDetails: React.FC = () => {
     }
 
     if (!selectedDenomination) {
-      alert("Please select a denomination");
+      setToastMessage("Please select a denomination");
+      setShowToast(true);
       return;
     }
 
@@ -192,7 +406,8 @@ const ProductDetails: React.FC = () => {
       const razorpayLoaded = await loadRazorpayScript();
 
       if (!razorpayLoaded) {
-        alert("Razorpay SDK failed to load. Please check your internet connection.");
+        setToastMessage("Razorpay SDK failed to load. Please check your internet connection.");
+        setShowToast(true);
         setIsPaymentProcessing(false);
         return;
       }
@@ -205,7 +420,8 @@ const ProductDetails: React.FC = () => {
       const orderData = orderResponse.data.data;
 
       if (!orderData || !orderData.id) {
-        alert("Failed to create order. Please try again.");
+        setToastMessage("Failed to create order. Please try again.");
+        setShowToast(true);
         setIsPaymentProcessing(false);
         return;
       }
@@ -232,47 +448,33 @@ const ProductDetails: React.FC = () => {
                 sku: product?.sku,
                 price: selectedDenomination,
                 razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
                 email: storedUser.email,
                 phone: storedUser.phone,
                 name: storedUser.name,
                 quantity: 1,
               });
 
-              const cards: OrderCard[] = orderApiResponse.data.data.cards;
-              if (!cards || cards.length === 0) {
-                alert("Order placed but no card details returned. Please contact support.");
-                return;
+              if (!orderApiResponse.data.success) {
+                throw new Error(orderApiResponse.data.details || "Failed to place order");
               }
-              setOrderData(cards[0]);
-              setShowSuccessModal(true);
 
-              // Send email to user with order details
-              try {
-                await axios.post("http://localhost:4000/api/email/send-order-confirmation", {
-                  email: storedUser.email,
-                  name: storedUser.name,
-                  orders: [{
-                    sku: product?.sku,
-                    amount: selectedDenomination,
-                    cardNumber: cards[0].cardNumber,
-                    cardPin: cards[0].cardPin,
-                    validity: cards[0].validity,
-                    issuanceDate: cards[0].issuanceDate,
-                    status: "Success"
-                  }],
-                  totalAmount: selectedDenomination,
-                  orderId: response.razorpay_order_id
-                });
-              } catch (emailError) {
-                console.error("Failed to send confirmation email:", emailError);
-                // Don't show error to user as the order was successful
-              }
+              const orderData = orderApiResponse.data.data;
+              const refno = orderData.refno;
+              
+              localStorage.setItem('pendingOrderRefno', refno);
+              startPolling(refno);
+              setToastMessage("Payment successful! Processing your order...");
+              setShowToast(true);
+
             } else {
-              alert("Payment verification failed.");
+              setToastMessage("Payment verification failed.");
+              setShowToast(true);
             }
           } catch (err) {
-            console.error("Verification error:", err);
-            alert("Verification failed. Please try again.");
+            setToastMessage("Verification failed. Please try again.");
+            setShowToast(true);
           }
         },
         prefill: {
@@ -293,15 +495,84 @@ const ProductDetails: React.FC = () => {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (err) {
-      console.error("Payment error:", err);
-      alert("Payment failed. Please try again.");
+      setToastMessage("Payment failed. Please try again.");
+      setShowToast(true);
       setIsPaymentProcessing(false);
     }
+  };
+
+  // Update the sendEmailConfirmation function
+  const sendEmailConfirmation = async (orderData: any, retryCount = 0) => {
+    try {
+      await axios.post("http://localhost:4000/api/email/send-order-confirmation", {
+        email: storedUser.email,
+        name: storedUser.name,
+        orders: [{
+          sku: orderData.sku,
+          amount: orderData.amount,
+          cardNumber: orderData.cardNumber,
+          cardPin: orderData.cardPin,
+          validity: orderData.validity,
+          issuanceDate: orderData.issuanceDate,
+          status: "Success"
+        }],
+        totalAmount: orderData.amount,
+        orderId: orderData.razorpayOrderId || orderData.orderId
+      });
+    } catch (emailError: any) {
+      // Check if it's a temporary error and we haven't exceeded retry attempts
+      if (emailError.response?.status === 421 && retryCount < 3) {
+        // Wait for 5 seconds before retrying
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        return sendEmailConfirmation(orderData, retryCount + 1);
+      }
+      
+      // If we've exhausted retries or it's a different error, show a message to the user
+      if (retryCount >= 3) {
+        alert("We couldn't send the confirmation email. Please check your email settings or contact support.");
+      }
+    }
+  };
+
+  // Add Toast Notification Component
+  const ToastNotification = ({ message, onClose }: { message: string; onClose: () => void }) => {
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+      <motion.div
+        className="fixed top-4 right-4 z-50"
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -50 }}
+      >
+        <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>{message}</span>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
     <>
       <Nav />
+      {/* Add Toast Notification */}
+      <AnimatePresence>
+        {showToast && (
+          <ToastNotification
+            message={toastMessage}
+            onClose={() => setShowToast(false)}
+          />
+        )}
+      </AnimatePresence>
      <div className="max-w-7xl mx-auto px-4 py-10">
         
         <div className="text-gray-500 text-sm mb-4">
@@ -606,8 +877,125 @@ const ProductDetails: React.FC = () => {
     </motion.div>
   )}
 </AnimatePresence>
+
+      {/* Network Status Modal */}
+      <AnimatePresence>
+        {showNetworkModal && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+            >
+              <div className="text-center">
+                {!isReconnecting ? (
+                  <>
+                    <motion.div
+                      className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                      animate={{
+                        scale: [1, 1.1, 1],
+                        rotate: [0, 5, -5, 0]
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    >
+                      <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </motion.div>
+                    <motion.h3
+                      className="text-lg font-semibold text-gray-900 mb-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      Network Connection Lost
+                    </motion.h3>
+                    <motion.div
+                      className="text-gray-600 mb-4 space-y-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <p>Your internet connection has been interrupted.</p>
+                      <p className="text-sm text-gray-500">
+                        Don't worry, we'll automatically sync your data when you're back online.
+                      </p>
+                    </motion.div>
+                    <motion.div
+                      className="flex justify-center space-x-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                    </motion.div>
+                  </>
+                ) : (
+                  <>
+                    <motion.div
+                      className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        rotate: [0, 360]
+                      }}
+                      transition={{
+                        duration: 2,
+                        ease: "easeInOut",
+                        times: [0, 0.5, 1]
+                      }}
+                    >
+                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </motion.div>
+                    <motion.h3
+                      className="text-lg font-semibold text-gray-900 mb-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      Reconnecting
+                    </motion.h3>
+                    <motion.p
+                      className="text-gray-600 mb-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      Restoring your connection
+                    </motion.p>
+                    <motion.div
+                      className="flex justify-center space-x-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                    </motion.div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
 
 export default ProductDetails;
+	

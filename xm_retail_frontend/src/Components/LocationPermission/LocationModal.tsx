@@ -157,7 +157,13 @@ const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, onSelect
                   <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 mb-3">
                     Sign in to see your saved addresses or add a new address
                   </p>
-                  <button className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-gray-700 rounded-lg border border-blue-200 dark:border-blue-600 text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors duration-200">
+                  <button 
+                    onClick={() => {
+                      onClose(); // Close the modal first
+                      navigate('/login'); // Navigate to login page
+                    }}
+                    className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-gray-700 rounded-lg border border-blue-200 dark:border-blue-600 text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors duration-200"
+                  >
                     Login / Sign up
                   </button>
                 </div>

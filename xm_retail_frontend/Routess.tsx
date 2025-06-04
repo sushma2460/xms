@@ -10,6 +10,7 @@ import AdminLogin from "./src/Components/Admin/AdminLogin";
 import AdminProtectedRoute from "./src/Components/AdminProtectedRoute";
 import DashBoard from "./src/Components/Admin/DashBoard";
 import ProductDetails from "./src/Components/Cards/productdetails";
+
 import CartPage from "./src/Components/Cart/CartPage";
 import LocationSelectPage from './src/Components/LocationPermission/LocationSelectPage'
 
@@ -17,7 +18,7 @@ function Routess() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/" element={<App/>}/>
         <Route path="/login" element={<Login />} />
 
         {/* User Protected Routes */}

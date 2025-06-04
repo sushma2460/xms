@@ -259,19 +259,23 @@ const Nav: React.FC = () => {
 
           {/* Location Display */}
           <div
-            className="flex items-center mx-2 sm:mx-4 cursor-pointer min-w-[60px] sm:min-w-[80px]"
-            onClick={() => {
-              setIsLocationModalOpen(true);
-            }}
+            className="flex flex-col items-end mx-2 sm:mx-4 cursor-pointer min-w-[60px] sm:min-w-[80px]"
+            onClick={() => setIsLocationModalOpen(true)}
           >
-            <div className="flex items-center space-x-1 sm:space-x-2 text-[#ff6726]">
-              <FaMapMarkerAlt className="text-[#ff6726] text-sm sm:text-base" />
-              <span className="text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">
-                {selectedLocation ? 
-                  `${selectedLocation.city || ''}${selectedLocation.city && selectedLocation.postcode ? ', ' : ''} 
-                  ${selectedLocation.postcode || ''}` 
-                : `${locationState.city || ''}${locationState.city && locationState.postcode ? ', ' : ''}${locationState.postcode || ''}`}
+            <div className="flex items-center text-[#ff6726]">
+              {/* Location Icon */}
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#ff6726] bg-opacity-10 mr-2">
+                <FaMapMarkerAlt className="text-[#ff6726] text-base" />
               </span>
+              {/* City and Pincode stacked */}
+              <div className="flex flex-col items-start">
+                <span className="font-semibold text-xs sm:text-sm mb-0.5">
+                  {selectedLocation?.city || locationState.city || "Set City"}
+                </span>
+                <span className="text-xs sm:text-sm">
+                  {selectedLocation?.postcode || locationState.postcode || "Set Pincode"}
+                </span>
+              </div>
             </div>
           </div>
 

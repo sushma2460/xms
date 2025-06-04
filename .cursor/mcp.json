@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "mcpServers": {
+    "browsertools": {
+      "name": "browsertools",
+      "url": "https://browsertools.mcp.cursor.sh",
+      "type": "browser",
+      "enabled": true,
+      "features": {
+        "screenshots": true,
+        "network": true,
+        "console": true,
+        "performance": true,
+        "elements": true,
+        "storage": true
+      }
+    }
+  }
+}
