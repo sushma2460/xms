@@ -14,17 +14,24 @@ import ProductDetailsPage from "./src/Components/prodetailsorder/ProductDetailsP
 
 import CartPage from "./src/Components/Cart/CartPage";
 import LocationSelectPage from './src/Components/LocationPermission/LocationSelectPage'
+import EntryCard from "./src/Components/Cards/entry";
 
 function Routess() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<App/>}/>
+        
+
+
+        <Route path="/" element={<EntryCard />}/>
+       
         <Route path="/login" element={<Login />} />
+        <Route path="/home" element={<App/>}/>
 
         {/* User Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/home" element={<Home />} />
+        
+          {/* <Route path="/home" element={<Home />} />  */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/cards/:id" element={<CardDetails />} />
         </Route>

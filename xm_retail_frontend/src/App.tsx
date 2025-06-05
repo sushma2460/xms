@@ -8,24 +8,21 @@ import Category from "./Components/categories/Category";
 import Nav from "./Components/NavBar/Nav";
 import { useState } from "react";
 
-
-
 const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
- 
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <Nav />
-      <Carousel />
-      <Category setSelectedCategory={setSelectedCategory} />
-      <CardApp selectedCategory={selectedCategory} />
-      {/* <ProductDetails /> */}
-      <Categorycards />
-      <Product />
-
-     
-    </>
+      
+        <Carousel />
+        <Category setSelectedCategory={setSelectedCategory} />
+        <CardApp selectedCategory={selectedCategory} />
+        {/* <ProductDetails /> */}
+        <Categorycards />
+        <Product />
+      </div>
+   
   );
 };
 

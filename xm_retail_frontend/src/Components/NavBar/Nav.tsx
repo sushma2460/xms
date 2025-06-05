@@ -188,7 +188,7 @@ const Nav: React.FC = () => {
         <div className="max-w-screen-xl mx-auto flex items-center justify-between px-2 sm:px-3 py-2 sm:py-3">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 min-w-[80px] sm:min-w-[100px]">
+          <Link to="/home" className="flex items-center gap-2 min-w-[80px] sm:min-w-[100px]">
             <img
               src={Logo}
               className="h-6 w-16 sm:h-8 sm:w-20 md:h-10 md:w-24 transition-all duration-300"
@@ -280,13 +280,15 @@ const Nav: React.FC = () => {
           </div>
 
           {/* Login/Signup Button */}
-          {!isLoggedIn && location.pathname === "/" && (
-            <Link to="/login" className="min-w-[80px] sm:min-w-[100px]">
-              <button className="text-white bg-[#ff6726] hover:bg-[#FFB74D] rounded-md text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 font-semibold w-full">
-                Login/Sign up
-              </button>
-            </Link>
-          )} 
+          {!isLoggedIn &&location.pathname==="/home" &&(
+            <div className="flex items-center gap-2">
+              <Link to="/login" className="min-w-[80px] sm:min-w-[100px]">
+                <button className="text-white bg-[#ff6726] hover:bg-[#FFB74D] rounded-md text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 font-semibold w-full">
+                  Login/Sign up
+                </button>
+              </Link>
+            </div>
+          )}
           {isLoggedIn && (
             <div className="flex items-center gap-2 sm:gap-4 min-w-[80px] sm:min-w-[100px] justify-end">
               <Link to="/cart" className="relative">
