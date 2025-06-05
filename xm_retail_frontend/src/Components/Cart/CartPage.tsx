@@ -494,7 +494,7 @@ const CartPage: React.FC = () => {
                 modalShown.current = true;
               } else {
                 // Replace alert with notification
-                setNotificationMessage("Payment successful! Your orders are being processed. You'll receive an email when they're ready.");
+                setNotificationMessage("Connection interrupted. Your order will be processed automatically when you're back online..");
                 setShowNotification(true);
                 setTimeout(() => {
                   setShowNotification(false);

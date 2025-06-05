@@ -8,7 +8,7 @@ import Category from "./Components/categories/Category";
 import Nav from "./Components/NavBar/Nav";
 import { useState } from "react";
 
-import { useLocationPermission } from "./Components/LocationPermission/useLocationPermission";
+
 
 const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
